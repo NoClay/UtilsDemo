@@ -5,13 +5,13 @@ import android.os.Bundle;
 import android.view.View;
 
 import java.util.Random;
-
 import pers.noclay.ecgwaveview.ECGWaveView;
 import pers.noclay.util.R;
 
 
 public class DemoECGWavesView extends AppCompatActivity implements View.OnClickListener{
     ECGWaveView wavesView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
