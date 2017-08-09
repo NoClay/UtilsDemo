@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--表格线的颜色-->
+    <!--标题的颜色-->
+    <!--波线的颜色-->
+    <!--标题的文字大小-->
+    <!--xy轴坐标的文字大小-->
+    <declare-styleable name="ECGWaveView">
+        <attr name="tableLineColor" format="color"/>
+        <attr name="xyTextColor" format="color"/>
+        <attr name="wavesLineColor" format="color"/>
+        <attr name="xyTextSize" format="integer"/>
+        <attr name="minY" format="integer"/>
+        <attr name="maxY" format="integer"/>
+        <attr name="refreshHZ" format="integer"/>
+        <attr name="dataHZ" format="integer"/>
+        <attr name="xGridNum" format="integer"/>
+        <attr name="mTimeCount"  format="float"/>
+    </declare-styleable>
+</resources>
