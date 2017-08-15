@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="pers.noclay.util">
+          package="pers.noclay.util">
 
     <application
         android:allowBackup="true"
@@ -11,12 +11,14 @@
         android:theme="@style/AppTheme">
         <activity android:name=".MainActivity">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
+                <action android:name="android.intent.action.MAIN"/>
 
-                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
         <activity android:name=".activitys.DemoECGWavesView"/>
+        <activity android:name=".activitys.DemoFoldLineView">
+        </activity>
     </application>
 
 </manifest>

@@ -1,6 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#3F51B5</color>
-    <color name="colorPrimaryDark">#303F9F</color>
-    <color name="colorAccent">#FF4081</color>
+    <color name="primary_text">#212121</color>
+    <color name="secondary_text">#757575</color>
+    <color name="icons">#FFFFFF</color>
+    <color name="divider">#E7E7E8</color>
+    <color name="dividerBack">#F9F9FB</color>
+
+    <color name="colorPrimary">#00BCD4</color>
+    <color name="colorPrimaryDark">#0097A7</color>
+    <color name="colorPrimaryLight">#B2EBF2</color>
+    <color name="colorAccent">#448AFF</color>
+    <color name="dimGray">#696969</color><!--暗灰色 -->
+    <color name="lightGray">#d3d3d3</color><!--亮灰色 -->
+    <color name="lightSeaGreen">#20b2aa</color><!--亮海蓝色 -->
+    <color name="white">#ffffff</color><!--白色 -->
+    <color name="black">#000000</color><!--黑色 -->
+    <color name="red">#F34235</color>
+    <color name="skyBlue">#03A9F4</color>
+
+    <!--这里用于放置8个背景色，用于给测量页面设置背景色-->
+    <color name="bg1">#D08DC9</color>
+    <color name="bg2">#55D1DC</color>
+    <color name="bg3">#92B753</color>
+    <color name="bg4">#7BE4B9</color>
+    <color name="bg5">#4D8682</color>
+    <color name="bg6">#7ED79E</color>
+    <color name="bg7">#5298CB</color>
+    <color name="bg8">#53B0B8</color>
+    <color name="danger">#F34235</color>
+    <color name="warning">#FFA320</color>
+    <color name="normal">#7BE4B9</color>
+    <color name="dangerStart">#FE5621</color>
+    <color name="warningStart">#EAF010</color>
+    <color name="normalStart">#8DE47B</color>
+    <color name="hintTextColor">#C5C5C5</color>
+    <color name="contentTextColor">#556281</color>
+    <color name="titleTextColor">#5E5E5E</color>
+    <color name="dialogBackground">#FBFBFB</color>
+
+    <color name="color_03a9f4">#2861FE</color>
+    <color name="lightBlue">#8ABEE6</color>
+    <color name="lightLightBlue">#EEF5FB</color>
+    <color name="mainBackground">#ECEDF1</color>
+    <color name="searchBarBackground">#EEEEEE</color>
+    <color name="searchBarTitle">#B0B0B0</color>
+    <color name="deepBlue">#2B2F3E</color>
+    <color name="darkWhite">#FAFAFA</color>
+    <color name="notedMessageColor">#F74C31</color>
+    <color name="widgetBackgroundColor">#EFEFF0</color>
+
+
+    <!-- QRCode scanner color begin -->
+    <color name="viewfinder_mask">#60000000</color>
+    <color name="result_view">#B0000000</color>
+    <color name="viewfinder_frame">#90FFFFFF</color>
+    <color name="result_point_color">#C0FFFF00</color>
+    <color name="laser_color">#0F0</color>
+    <color name="corner_color">#00FF00</color>
+    <!-- QRCode scanner color end -->
 </resources>

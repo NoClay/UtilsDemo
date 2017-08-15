@@ -1,1 +1,1 @@
-include ':app', ':utiltool', ':ecgwaveview'
+include ':app', ':utiltool', ':ecgwaveview', ':foldlineview'

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="FoldLineView">
+        <attr name="backLineColor" format="color"/>
+        <attr name="lineColor" format="color"/>
+        <attr name="labelColor" format="color"/>
+        <attr name="labelSize" format="dimension"/>
+        <attr name="xScaleNum" format="integer"/>
+        <attr name="yScaleNum" format="integer"/>
+        <attr name="yStart" format="float"/>
+        <attr name="yEnd" format="float"/>
+    </declare-styleable>
+</resources>
