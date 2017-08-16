@@ -44,9 +44,14 @@ NoClay
 
 这个view是一个心电图的自定义View，可以加载心电图数据，显示对应的波形。
 
-使用说明：[ClickHere](https://github.com/NoClay/UtilsDemo/blob/master/DownloadAAR/ECGWaveView/ECGWaveView.md)
+使用说明：[查看使用说明](DownloadAAR/ECGWaveView/ECGWaveView.md)
 
-下载地址：https://github.com/NoClay/UtilsDemo/blob/master/DownloadAAR/ECGWaveView/ecgwaveview-release.aar
+下载地址：[点击此处下载](DownloadAAR/ECGWaveView/ecgwaveview-release.aar)
 
+### FoldLineView
 
+这个view是一个折线图的view，可以添加多条折线，只需要实现对应的数据接口即可。
 
+使用说明：[查看使用说明](DownloadAAR/FoldLineView/FoldLineView.md)
+
+下载[地址：[点击此处下载](DownloadAAR/FoldLineView/foldlineview-release.aar)
