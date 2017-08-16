@@ -54,4 +54,4 @@ NoClay
 
 使用说明：[查看使用说明](DownloadAAR/FoldLineView/FoldLineView.md)
 
-下载[地址：[点击此处下载](DownloadAAR/FoldLineView/foldlineview-release.aar)
+下载地址：[点击此处下载](DownloadAAR/FoldLineView/foldlineview-release.aar)
