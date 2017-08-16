@@ -17,7 +17,6 @@ import android.view.VelocityTracker;
 import java.util.List;
 
 
-
 /**
  * Created by noclay on 2017/8/13.
  */
@@ -25,32 +24,58 @@ import java.util.List;
 public class FoldLineView extends SurfaceView implements SurfaceHolder.Callback, Runnable {
 
     private static final String TAG = "FoldLineView";
-    /** surface持有者 */
+    /**
+     * surface持有者
+     */
     private SurfaceHolder mHolder;
-    /** 当前画布 */
+    /**
+     * 当前画布
+     */
     private Canvas mCanvas;
-    /** 是否开始绘画 */
+    /**
+     * 是否开始绘画
+     */
     private boolean mIsDrawing = false;
-    /** 最后一次点击的x坐标 */
+    /**
+     * 最后一次点击的x坐标
+     */
     private int lastX;
-    /** 偏移量，用来实现平滑移动 */
+    /**
+     * 偏移量，用来实现平滑移动
+     */
     private int mOffset = 0;
-    /** 移动速度，用来实现速度递减 */
+    /**
+     * 移动速度，用来实现速度递减
+     */
     private int mSpeed = 0;
-    /** 是否触摸屏幕 */
+    /**
+     * 是否触摸屏幕
+     */
     private boolean mIsTouch = false;
-    /** 时间计数器，用来快速滚动时候减速 */
+    /**
+     * 时间计数器，用来快速滚动时候减速
+     */
     private int time = 0;
-    /** 移动时候X方向上的速度 */
+    /**
+     * 移动时候X方向上的速度
+     */
     private double xVelocity = 0;
-    /** 是否可以滚动，当不在范围时候不可以滚动 */
+    /**
+     * 是否可以滚动，当不在范围时候不可以滚动
+     */
     private boolean isScroll = true;
-    /** 每个x轴刻度的宽度 */
+    /**
+     * 每个x轴刻度的宽度
+     */
     private int mXScaleWidth;
-    /** 每个y轴刻度的宽度 */
+    /**
+     * 每个y轴刻度的宽度
+     */
     private int mYScaleWidth;
-    /** 外部的list，用来存放折线上的值 */
-    private List<? extends FoldLineBean> mLines;
+    /**
+     * 外部的list，用来存放折线上的值
+     */
+    private FoldLineAdapter mAdapter;
     /**
      * 左、上、右、下四个内边距
      */
@@ -64,9 +89,13 @@ public class FoldLineView extends SurfaceView implements SurfaceHolder.Callback,
     private Paint linePaint;
     private TextPaint textPaint;
     private float mYStart, mYEnd;
-    /** x轴上的格子数量 */
+    /**
+     * x轴上的格子数量
+     */
     private int mXScaleNum;
-    /** y轴上的格子数量 */
+    /**
+     * y轴上的格子数量
+     */
     private int mYScaleNum;
     private int backLineColor;
     private int lineColor;
@@ -82,16 +111,15 @@ public class FoldLineView extends SurfaceView implements SurfaceHolder.Callback,
     public static final int DEFAULT_LABEL_TEXT_SIZE = 30;
     public static final float DEFAULT_Y_START = -300;
     public static final float DEFAULT_Y_END = 300;
-    public onScrollChartListener onScrollChartListener;
-    public interface onScrollChartListener{
+    public OnScrollChartListener onScrollChartListener;
+    public interface OnScrollChartListener{
         void onScroll(int left, int right);
     }
-
-    public FoldLineView.onScrollChartListener getOnScrollChartListener() {
+    public OnScrollChartListener getOnScrollChartListener() {
         return onScrollChartListener;
     }
 
-    public void setOnScrollChartListener(FoldLineView.onScrollChartListener onScrollChartListener) {
+    public void setOnScrollChartListener(OnScrollChartListener onScrollChartListener) {
         this.onScrollChartListener = onScrollChartListener;
     }
 
@@ -105,6 +133,7 @@ public class FoldLineView extends SurfaceView implements SurfaceHolder.Callback,
 
     /**
      * 构造方法区
+     *
      * @param context
      */
     public FoldLineView(Context context) {
@@ -152,6 +181,7 @@ public class FoldLineView extends SurfaceView implements SurfaceHolder.Callback,
 
     /**
      * 在surface被创建时
+     *
      * @param holder
      */
     @Override
@@ -178,7 +208,7 @@ public class FoldLineView extends SurfaceView implements SurfaceHolder.Callback,
     }
 
 
-    public void getMeasure(){
+    public void getMeasure() {
         mWidth = getWidth();
         mHeight = getHeight();
         mPaddingLeft = getPaddingLeft();
@@ -191,7 +221,7 @@ public class FoldLineView extends SurfaceView implements SurfaceHolder.Callback,
 
     @Override
     public void run() {
-        while (mIsDrawing){
+        while (mIsDrawing) {
             //进行画图
             // 绘制方法
             getMeasure();
@@ -201,18 +231,18 @@ public class FoldLineView extends SurfaceView implements SurfaceHolder.Callback,
         }
     }
 
-    public void startDrawing(){
-        if (mLines == null || mLines.size() == 0){
-            return ;
+    public void startDrawing() {
+        if (mAdapter == null || mAdapter.getCount() == 0) {
+            return;
         }
         mIsDrawing = true;
-        if (drawThread == null){
+        if (drawThread == null) {
             drawThread = new Thread(this);
             drawThread.start();
         }
     }
 
-    public void stopDrawing(){
+    public void stopDrawing() {
         mIsDrawing = false;
         drawThread = null;
     }
@@ -243,30 +273,29 @@ public class FoldLineView extends SurfaceView implements SurfaceHolder.Callback,
 
     private void drawLine() {
         //判定每一条线
-        FoldLineInterface now;
         int left = 0;
         int right = 0;
-        if (mLines.size() > 0){
+        if (mAdapter.getCount() > 0) {
             left = right = ERROR;
-            for (int i = mLines.size() - 1; i >= 0; i--) {
-                now = mLines.get(i);
+            for (int i = mAdapter.getCount() - 1; i >= 0; i--) {
+
                 int temp = computeX(i);
-                if (checkIsInChart(temp)){
+                if (checkIsInChart(temp)) {
                     //该点在折线内
-                    if (right == ERROR){
+                    if (right == ERROR) {
                         right = i;
                     }
                     left = i;
                     mCanvas.drawLine(temp, mPaddingTop,
                             temp, mHeight - mPaddingBottom,
                             backPaint);
-                    mCanvas.drawText(now.getLabel(), temp, mHeight - mPaddingBottom/ 4, textPaint);
-                    List<Float> nowPoints = now.getLinesAsList();
+                    mCanvas.drawText(mAdapter.getItemLabel(i), temp, mHeight - mPaddingBottom / 4, textPaint);
+                    List<Float> nowPoints = mAdapter.getItemPoint(i);
                     backPaint.setStrokeWidth(3f);
                     for (int j = 0; j < nowPoints.size(); j++) {
-                        if (mColors != null && mColors.size() != 0){
+                        if (mColors != null && mColors.size() != 0) {
                             backPaint.setColor(mColors.get(j % mColors.size()));
-                        }else{
+                        } else {
                             backPaint.setColor(lineColor);
                         }
                         mCanvas.drawCircle(temp, computeY((nowPoints.get(j))), 5, backPaint);
@@ -274,16 +303,15 @@ public class FoldLineView extends SurfaceView implements SurfaceHolder.Callback,
                     backPaint.setColor(backLineColor);
                     backPaint.setStrokeWidth(1f);
                     linePaint.setStrokeWidth(2f);
-                    if (i != 0 && checkIsInChart(computeX(i - 1))){
+                    if (i != 0 && checkIsInChart(computeX(i - 1))) {
                         //上一个点在折线图内,且存在上一个点
-                        List<Float> lastPoints = mLines.get(i - 1).getLinesAsList();
+                        List<Float> lastPoints = mAdapter.getItemPoint(i - 1);
                         for (int j = 0; j < nowPoints.size(); j++) {
-                            if (mColors != null && mColors.size() != 0){
+                            if (mColors != null && mColors.size() != 0) {
                                 linePaint.setColor(mColors.get(j % mColors.size()));
-                            }else{
+                            } else {
                                 linePaint.setColor(lineColor);
                             }
-                            mCanvas.drawCircle(temp, computeY((nowPoints.get(j))), 5, backPaint);
                             mCanvas.drawLine(computeX(i - 1),
                                     computeY(lastPoints.get(j)),
                                     temp,
@@ -299,31 +327,34 @@ public class FoldLineView extends SurfaceView implements SurfaceHolder.Callback,
         onScrollChartListener.onScroll(left, right);
     }
 
-    private int computeY(int data){
+    private int computeY(int data) {
         data = data > mYEnd ? (int) mYEnd : data;
         return (int) (mHeight - mPaddingBottom - mYScaleWidth * ((data - mYStart) / gridY));
     }
 
-    private int computeY(float data){
+    private int computeY(float data) {
         data = data > mYEnd ? (int) mYEnd : data;
         return (int) (mHeight - mPaddingBottom - mYScaleWidth * ((data - mYStart) / gridY));
     }
+
     /**
      * 计算每一个x的坐标
+     *
      * @param i
      * @return
      */
-    private int computeX(int i){
-        return (i - mLines.size()) * mXScaleWidth + mOffset + mWidth - mPaddingRight;
+    private int computeX(int i) {
+        return (i - mAdapter.getCount()) * mXScaleWidth + mOffset + mWidth - mPaddingRight;
     }
 
     /**
      * 判断当前坐标点是否在折线图内
+     *
      * @param x
      * @return
      */
-    private boolean checkIsInChart(int x){
-        if (x > mPaddingLeft && x < mWidth - mPaddingRight){
+    private boolean checkIsInChart(int x) {
+        if (x > mPaddingLeft && x < mWidth - mPaddingRight) {
             return true;
         }
         return false;
@@ -345,7 +376,7 @@ public class FoldLineView extends SurfaceView implements SurfaceHolder.Callback,
         }
         textPaint.setTextAlign(Paint.Align.CENTER);
         for (int i = 1; i <= mYScaleNum; i++) {
-            mCanvas.drawText("" + (int)(mYEnd - (i - 1) * gridY),
+            mCanvas.drawText("" + (int) (mYEnd - (i - 1) * gridY),
                     mPaddingLeft / 2, mPaddingTop + i * mYScaleWidth, textPaint);
         }
     }
@@ -368,10 +399,13 @@ public class FoldLineView extends SurfaceView implements SurfaceHolder.Callback,
         }
 
     }
-    /** 对偏移量进行边界值判定 */
+
+    /**
+     * 对偏移量进行边界值判定
+     */
     private void setOffsetRange() {
 
-        int offsetMax = mXScaleWidth * (mLines.size() - 5);
+        int offsetMax = mXScaleWidth * (mAdapter.getCount() - 5);
         if (mOffset >= offsetMax) {
             isScroll = false;
             mOffset = offsetMax;
@@ -490,15 +524,17 @@ public class FoldLineView extends SurfaceView implements SurfaceHolder.Callback,
         return mYEnd;
     }
 
-    public List<? extends FoldLineBean> getLines() {
-        return mLines;
+    public FoldLineAdapter getAdapter() {
+        return mAdapter;
     }
 
-    public void setLines(List<? extends FoldLineBean> lines) {
-        mLines = lines;
+    public void setAdapter(FoldLineAdapter adapter) {
+        mAdapter = adapter;
     }
 
-    /** dp转化为px工具 */
+    /**
+     * dp转化为px工具
+     */
     private int dp2px(Context context, int dp) {
         return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp,
                 context.getResources().getDisplayMetrics());

@@ -3,21 +3,22 @@ package pers.noclay.util.activitys;
 import android.graphics.Color;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import pers.noclay.foldlineview.FoldLineAdapter;
 import pers.noclay.foldlineview.FoldLineView;
 import pers.noclay.util.R;
 import pers.noclay.util.data.MeasureFoldLine;
 
-public class DemoFoldLineView extends AppCompatActivity implements FoldLineView.onScrollChartListener{
+public class DemoFoldLineView extends AppCompatActivity implements FoldLineView.OnScrollChartListener{
 
     FoldLineView mFoldLineView;
     List<MeasureFoldLine> data;
     List<Integer> colors;
+    FoldLineAdapter<MeasureFoldLine> mAdapter;
     private static final String TAG = "DemoFoldLineView";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,8 +27,9 @@ public class DemoFoldLineView extends AppCompatActivity implements FoldLineView.
         setupView();
         setupData();
         setupColor();
+        mAdapter = new FoldLineAdapter<>(data);
         mFoldLineView.setColors(colors);
-        mFoldLineView.setLines(data);
+        mFoldLineView.setAdapter(mAdapter);
         mFoldLineView.setOnScrollChartListener(this);
         mFoldLineView.startDrawing();
     }
@@ -76,7 +78,6 @@ public class DemoFoldLineView extends AppCompatActivity implements FoldLineView.
 
     @Override
     public void onScroll(int left, int right) {
-        Log.d(TAG, "onScroll: left = " + left);
-        Log.d(TAG, "onScroll: right = " + right);
+
     }
 }

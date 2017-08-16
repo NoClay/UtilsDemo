@@ -18,7 +18,6 @@ public class DemoECGWavesView extends AppCompatActivity implements View.OnClickL
         setContentView(R.layout.activity_demo_ecgwaves_view);
         setupViews();
         setupData();
-
     }
 
     private void setupData() {

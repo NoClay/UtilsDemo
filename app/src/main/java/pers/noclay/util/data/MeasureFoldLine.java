@@ -10,7 +10,7 @@ import pers.noclay.foldlineview.FoldLineInterface;
  * Created by i-gaolonghai on 2017/8/14.
  */
 
-public class MeasureFoldLine extends FoldLineBean {
+public class MeasureFoldLine implements FoldLineInterface{
     private Float averageData;
     private Float maxData;
     private Float minData;
