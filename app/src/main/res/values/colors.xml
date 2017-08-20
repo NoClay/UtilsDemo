@@ -5,7 +5,7 @@
     <color name="icons">#FFFFFF</color>
     <color name="divider">#E7E7E8</color>
     <color name="dividerBack">#F9F9FB</color>
-
+    <color name="green">#A0E75A</color>
     <color name="colorPrimary">#00BCD4</color>
     <color name="colorPrimaryDark">#0097A7</color>
     <color name="colorPrimaryLight">#B2EBF2</color>
@@ -17,6 +17,9 @@
     <color name="black">#000000</color><!--黑色 -->
     <color name="red">#F34235</color>
     <color name="skyBlue">#03A9F4</color>
+    <color name="darkGray">#38393E</color>
+    <color name="lightBlack">#2F3034</color>
+    <color name="gray">#EBEBEB</color>
 
     <!--这里用于放置8个背景色，用于给测量页面设置背景色-->
     <color name="bg1">#D08DC9</color>
