@@ -14,6 +14,7 @@ import java.util.List;
 
 import pers.noclay.util.activitys.DemoECGWavesView;
 import pers.noclay.util.activitys.DemoFoldLineView;
+import pers.noclay.util.activitys.WeChatActivity;
 import pers.noclay.util.adapter.DemoListAdapter;
 import pers.noclay.util.data.Demo;
 
@@ -34,6 +35,7 @@ public class MainActivity extends AppCompatActivity implements ListView.OnItemCl
     private void initData() {
         addDemo("显示心电图的demo", DemoECGWavesView.class);
         addDemo("测试折线图", DemoFoldLineView.class);
+        addDemo("测试蓝牙SDK", WeChatActivity.class);
     }
 
     private void addDemo(String title, Class<? extends Activity> activity) {

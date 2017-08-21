@@ -14,14 +14,18 @@ public class BluetoothConfig {
     public boolean mHoldLongConnectAble;
     public boolean mAutoPairAble;
     public String mPairPassword;
+    public long mDiscoverableTime;
+    public String mTargetAddress;
 
     private BluetoothConfig(Context context, UUID UUID, boolean holdLongConnectAble,
-                            boolean autoPairAble, String pairPassword) {
+                            boolean autoPairAble, String pairPassword, long discoverableTime, String targetAddress) {
         mContext = context;
         mUUID = UUID;
         mHoldLongConnectAble = holdLongConnectAble;
         mAutoPairAble = autoPairAble;
         mPairPassword = pairPassword;
+        mDiscoverableTime = discoverableTime;
+        mTargetAddress = targetAddress;
     }
 
     public static final class Builder{
@@ -30,9 +34,12 @@ public class BluetoothConfig {
         private boolean mHoldLongConnectAble;
         private boolean mAutoPairAble;
         private String mPairPassword;
+        private long mDiscoverableTime;
+        private String mTargetAddress;
 
         public Builder(Context context) {
             mContext = context;
+            this.mDiscoverableTime = BluetoothConstant.DEFAULT_DISCOVERABLE_TIME;
         }
 
         public Builder setUUID(String uuid){
@@ -60,8 +67,21 @@ public class BluetoothConfig {
             return this;
         }
 
+        public Builder setDiscoverableTime(long time){
+            if (time > 0){
+                this.mDiscoverableTime = time;
+            }
+            return this;
+        }
+
+        public Builder setTargetAddress(String targetAddress){
+            this.mTargetAddress = targetAddress;
+            return this;
+        }
+
         public BluetoothConfig build(){
-            return new BluetoothConfig(mContext, mUUID, mHoldLongConnectAble, mAutoPairAble, mPairPassword);
+            return new BluetoothConfig(mContext, mUUID, mHoldLongConnectAble,
+                    mAutoPairAble, mPairPassword, mDiscoverableTime, mTargetAddress);
         }
 
     }

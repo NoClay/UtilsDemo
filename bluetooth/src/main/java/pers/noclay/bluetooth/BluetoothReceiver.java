@@ -5,41 +5,106 @@ import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.text.TextUtils;
 import android.util.Log;
 
-import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Created by i-gaolonghai on 2017/8/18.
  */
 
-public class BluetoothReceiver extends BroadcastReceiver{
+public final class BluetoothReceiver extends BroadcastReceiver{
     private static final String TAG = "BluetoothReceiver";
-    private List<BluetoothDevice> deviceFounded;
+    private OnBTDeviceDiscoveryListener mOnBTDeviceDiscoveryListener;
+    private OnFinishDiscoveryDevice mOnFinishDiscoveryDevice;
+    private List<BluetoothDevice> mOnlineDevices;
+    private OnBTBroadCastListener mBroadCastListener;
+    private CreateBondStrategy mCreateBondStrategy;
 
-    public BluetoothReceiver(List<BluetoothDevice> deviceFounded) {
-        this.deviceFounded = deviceFounded;
+    public OnBTDeviceDiscoveryListener getOnBTDeviceDiscoveryListener() {
+        return mOnBTDeviceDiscoveryListener;
+    }
+
+    public void setOnBTDeviceDiscoveryListener(OnBTDeviceDiscoveryListener onBTDeviceDiscoveryListener) {
+        mOnBTDeviceDiscoveryListener = onBTDeviceDiscoveryListener;
+    }
+
+    public OnBTBroadCastListener getBroadCastListener() {
+        return mBroadCastListener;
+    }
+
+    public void setBroadCastListener(OnBTBroadCastListener broadCastListener) {
+        mBroadCastListener = broadCastListener;
+    }
+
+    public CreateBondStrategy getCreateBondStrategy() {
+        return mCreateBondStrategy;
+    }
+
+    public void setCreateBondStrategy(CreateBondStrategy createBondStrategy) {
+        mCreateBondStrategy = createBondStrategy;
+    }
+
+    public BluetoothReceiver(OnBTDeviceDiscoveryListener onBTDeviceDiscoveryListener) {
+        mOnBTDeviceDiscoveryListener = onBTDeviceDiscoveryListener;
+        mOnlineDevices = new ArrayList<>();
+    }
+
+    public OnFinishDiscoveryDevice getOnFinishDiscoveryDevice() {
+        return mOnFinishDiscoveryDevice;
+    }
+
+    public void setOnFinishDiscoveryDevice(OnFinishDiscoveryDevice onFinishDiscoveryDevice) {
+        mOnFinishDiscoveryDevice = onFinishDiscoveryDevice;
+    }
+
+    public BluetoothReceiver() {
+        this(null);
     }
 
     @Override
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
+        Log.d(TAG, "onReceive: action = " + action);
+        if (mBroadCastListener != null){
+            mBroadCastListener.onBTBroadCastReceive(intent);
+        }
         switch (action) {
-
-            case BluetoothAdapter.ACTION_DISCOVERY_FINISHED: {
-                Log.d(TAG, "onReceive: 结束查找设备");
+            case BluetoothDevice.ACTION_PAIRING_REQUEST: {
+                if (mCreateBondStrategy != null){
+                    mCreateBondStrategy.onBTDevicePairingReQuest(intent);
+                }
                 break;
             }
-            case BluetoothAdapter.ACTION_DISCOVERY_STARTED: {
-                Log.d(TAG, "onReceive: 开始查找设备");
+            case BluetoothDevice.ACTION_BOND_STATE_CHANGED: {
+                if (mCreateBondStrategy != null){
+                    mCreateBondStrategy.onBTDeviceBondStateChanged(intent);
+                }
                 break;
             }
             case BluetoothDevice.ACTION_FOUND: {
                 /* 从intent中取得搜索结果数据 */
-                Log.d(TAG, "onReceive: 查找到设备");
-                deviceFounded.add((BluetoothDevice) intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE));
+                if (mOnBTDeviceDiscoveryListener != null){
+                    mOnBTDeviceDiscoveryListener.onFoundedBluetoothDevice(intent);
+                    mOnBTDeviceDiscoveryListener.onFoundedBluetoothDevice((BluetoothDevice) intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE));
+                }
+                mOnlineDevices.add((BluetoothDevice) intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE));
+                break;
+            }
+            case BluetoothAdapter.ACTION_DISCOVERY_FINISHED: {
+                if (mOnBTDeviceDiscoveryListener != null){
+                    mOnBTDeviceDiscoveryListener.onBTAdapterDiscoveryFinished(intent);
+                }
+                if (mOnFinishDiscoveryDevice != null){
+                    mOnFinishDiscoveryDevice.onFinish(mOnlineDevices);
+                }
+                break;
+            }
+            case BluetoothAdapter.ACTION_DISCOVERY_STARTED: {
+                if (mOnBTDeviceDiscoveryListener != null){
+                    mOnBTDeviceDiscoveryListener.onBTAdapterDiscoveryStarted(intent);
+                }
                 break;
             }
         }
