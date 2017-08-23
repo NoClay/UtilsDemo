@@ -3,6 +3,7 @@ package pers.noclay.bluetooth;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 
+import java.util.Random;
 import java.util.UUID;
 
 /**
@@ -42,11 +43,40 @@ public class BluetoothConstant {
     public static final String PERMISSION_BLUETOOTH = "android.permission.BLUETOOTH";
     public static final String PERMISSION_BLUETOOTH_ADMIN = "android.permission.BLUETOOTH_ADMIN";
     public static final String PERMISSION_BLUETOOTH_PRIVILEGED = "android.permission.BLUETOOTH_PRIVILEGED";
+
+    private static final String CONNECT_NAME = "Bluetooth";
+
+    public static final String VALUE_UUID = "valueUUID";
+
     private static final int REQUEST_CODE = 2 << 10;
     public static final int REQUEST_OPEN_BLUETOOTH = REQUEST_CODE + 1;
+
     private static final int MESSAGE_CODE = 2 << 10;
+    public static final int MESSAGE_CONNECT_SUCCESS = MESSAGE_CODE +1;
+    public static final int MESSAGE_WAIT_CONNECT = MESSAGE_CODE + 2;
+    public static final int MESSAGE_START_CONNECT = MESSAGE_CODE + 3;
+    public static final int MESSAGE_READ_STRING = MESSAGE_CODE + 4;
+    public static final int MESSAGE_CONNECT_FAILED = MESSAGE_CODE + 5;
+
+    private static final int ARG_CODE = 2 << 10;
+    public static final int ARG_FROM_SERVER = ARG_CODE + 1;
+    public static final int ARG_FROM_CLIENT = ARG_CODE + 2;
+
+    private static final int METHOD_CODE = 2 << 10;
+    public static final int METHOD_ON_CONNECT_SUCCESS = METHOD_CODE + 1;
+    public static final int METHOD_ON_CONNECT_FAILED = METHOD_CODE + 2;
+    public static final int METHOD_ON_CONNECT_START = METHOD_CODE + 3;
+    public static final int METHOD_ON_RECEIVE_MESSAGE = METHOD_CODE + 4;
+    public static final int METHOD_ON_RECEIVE_FILE = METHOD_CODE + 5;
+
+    public static final int FILE_CODE = 2 << 10;
+
 
     private static final int ERROR_CODE = 2 << 10;
 
     public static final int DEFAULT_DISCOVERABLE_TIME = 120;
+
+    public static String getConnectName() {
+        return CONNECT_NAME + "_" + new Random().nextInt(1000);
+    }
 }

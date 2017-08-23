@@ -47,10 +47,6 @@ public class DemoListAdapter extends ArrayAdapter<Demo> {
             holder = (ViewHolder) convertView.getTag();
         }
         Demo demo = demoList.get(position);
-        Log.d(TAG, "getView: index = " + position);
-        Log.d(TAG, "getView: size = " + getCount());
-        Log.d(TAG, "getView: demo = " + demo);
-        Log.d(TAG, "getView: title = " + demo.getTitle());
         holder.textView.setText(demo.getTitle());
         return view;
     }

@@ -3,15 +3,20 @@ package pers.noclay.bluetooth;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
+import android.os.IBinder;
+import android.os.RemoteException;
 import android.util.Log;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import static android.app.Activity.RESULT_OK;
 
@@ -26,23 +31,113 @@ public class Bluetooth {
     private static BluetoothWrapper sBluetoothWrapper;
     private static OnPrepareBluetoothListener sPrepareBluetoothListener;
     private static ABSCreateBondStrategy sCustomCreateBondStrategy;
+    private static IBluetoothConnection sIBluetoothConnection;
+    private static OnConnectListener sOnConnectListener;
+    private static boolean sHasConnected = false;
     private static final String TAG = "Bluetooth";
 
     private Bluetooth() {
-    }
-
-    public static void initialize(BluetoothConfig config, OnBTDeviceDiscoveryListener listener) {
-        if (isSupportedBluetooth()) {
-            BluetoothWrapper.config(config, listener);
-            sBluetoothWrapper = BluetoothWrapper.getInstance();
-            registerBluetoothReceiver();
-        }
     }
 
     public static void initialize(BluetoothConfig config) {
         initialize(config, null);
     }
 
+
+    public static void initialize(BluetoothConfig config, OnBTDeviceDiscoveryListener listener) {
+        if (isSupportedBluetooth()) {
+            BluetoothWrapper.config(config, listener);
+            sBluetoothWrapper = BluetoothWrapper.getInstance();
+            registerBluetoothReceiver();
+            Context context = sBluetoothWrapper.getApplicationContext();
+            Intent intent = new Intent(context, BluetoothConnectionService.class);
+            Log.d(TAG, "initialize: wrapper = " + sBluetoothWrapper);
+            intent.putExtra(BluetoothConstant.VALUE_UUID, sBluetoothWrapper.getUUID().toString());
+            context.bindService(intent, sServiceConnection, Context.BIND_AUTO_CREATE);
+            sHasConnected = false;
+        }
+    }
+
+
+    private static IBinder.DeathRecipient sDeathRecipient = new IBinder.DeathRecipient() {
+        @Override
+        public void binderDied() {
+            if (sIBluetoothConnection != null){
+                sIBluetoothConnection.asBinder().unlinkToDeath(sDeathRecipient, 0);
+                sIBluetoothConnection = null;
+                Context context = sBluetoothWrapper.getContext();
+                Intent intent = new Intent(context, BluetoothConnectionService.class);
+                context.bindService(intent, sServiceConnection, Context.BIND_AUTO_CREATE);
+            }
+        }
+    };
+
+    private static IBluetoothReceiverListener sIBluetoothReceiverListener = new IBluetoothReceiverListener.Stub() {
+        @Override
+        public void onConnectStart() throws RemoteException {
+            Log.d(TAG, "onConnectStart: 开始连接");
+            if (sOnConnectListener != null){
+                sOnConnectListener.onConnectStart();
+            }
+        }
+
+        @Override
+        public void onConnectSuccess() throws RemoteException {
+            Log.d(TAG, "onConnectSuccess: 连接成功");
+            if (sOnConnectListener != null){
+                sOnConnectListener.onConnectSuccess();
+            }
+            sHasConnected = true;
+        }
+
+        @Override
+        public void onConnectFailed() throws RemoteException {
+            Log.d(TAG, "onConnectFailed: 连接失败");
+            if (sOnConnectListener != null){
+                sOnConnectListener.onConnectFail();
+            }
+        }
+
+        @Override
+        public void onReceiveMessage(byte[] bytes) throws RemoteException {
+            Log.d(TAG, "onReceiveMessage: 收到 = " + new String(bytes));
+            if (sOnConnectListener != null){
+                sOnConnectListener.onReceiveMessage(bytes);
+            }
+        }
+
+    };
+
+    public static boolean isHasConnected() {
+        return sHasConnected;
+    }
+
+    public static void sendMessage(String message){
+        if (sHasConnected){
+            try {
+                sIBluetoothConnection.sendMessage(message);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    private static ServiceConnection sServiceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+            sIBluetoothConnection = IBluetoothConnection.Stub.asInterface(iBinder);
+            try {
+                sIBluetoothConnection.asBinder().linkToDeath(sDeathRecipient, 0);
+                sIBluetoothConnection.registerListener(sIBluetoothReceiverListener);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName componentName) {
+            sIBluetoothConnection = null;
+        }
+    };
 
     public static void setBluetoothWrapper(BluetoothWrapper wrapper) {
         sBluetoothWrapper = wrapper;
@@ -97,6 +192,14 @@ public class Bluetooth {
 
     public static void onDestroy() {
         unregisterBluetoothReceiver();
+        if (sIBluetoothConnection != null && sIBluetoothConnection.asBinder().isBinderAlive()){
+            try {
+                sIBluetoothConnection.unregisterListener(sIBluetoothReceiverListener);
+                sBluetoothWrapper.getApplicationContext().unbindService(sServiceConnection);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
 
@@ -125,7 +228,6 @@ public class Bluetooth {
         }
         sBluetoothWrapper.getReceiver().setOnFinishDiscoveryDevice(onlineDevices);
         sBluetoothAdapter.startDiscovery();
-        Log.d("WeChatActivity", "startSearch: 开始");
     }
 
 
@@ -143,6 +245,13 @@ public class Bluetooth {
             return sBluetoothAdapter.isEnabled();
         }
         return false;
+    }
+
+    public static UUID getUUID(){
+        if (isSupportedBluetooth()){
+            return sBluetoothWrapper.getUUID();
+        }
+        return null;
     }
 
     public static void requestPermission() {
@@ -293,9 +402,12 @@ public class Bluetooth {
         return sBluetoothAdapter;
     }
 
-    public static void startConnect(OnStartConnectListener onStartConnectListener,
+    public static void startConnect(OnConnectListener onConnectListener,
                                     ABSCreateBondStrategy createBondStrategy,
                                     OnCreateBondResultListener onCreateBondResultListener) {
+        if (onConnectListener != null){
+            setOnConnectListener(onConnectListener);
+        }
         if (!isBonded(getTargetAddress())){
             //开始配对
             if (createBondStrategy != null){
@@ -307,11 +419,26 @@ public class Bluetooth {
                 createBond(onCreateBondResultListener);
             }
         }
-        //
+        //开始配对
+        if (isBonded(getTargetAddress())){
+            try {
+                sIBluetoothConnection.connect(getTargetAddress());
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
-    public static void startConnect(OnStartConnectListener onStartConnectListener, ABSCreateBondStrategy createBondStrategy){
-        startConnect(onStartConnectListener, createBondStrategy, new OnCreateBondResultListener() {
+    public static OnConnectListener getOnConnectListener() {
+        return sOnConnectListener;
+    }
+
+    public static void setOnConnectListener(OnConnectListener onConnectListener) {
+        sOnConnectListener = onConnectListener;
+    }
+
+    public static void startConnect(OnConnectListener onConnectListener, ABSCreateBondStrategy createBondStrategy){
+        startConnect(onConnectListener, createBondStrategy, new OnCreateBondResultListener() {
             @Override
             public void onCreateBondSuccess() {
 
@@ -329,12 +456,12 @@ public class Bluetooth {
         });
     }
 
-    public static void startConnect(OnStartConnectListener onStartConnectListener,
+    public static void startConnect(OnConnectListener onConnectListener,
                                     OnCreateBondResultListener onCreateBondResultListener){
-        startConnect(onStartConnectListener, null, onCreateBondResultListener);
+        startConnect(onConnectListener, null, onCreateBondResultListener);
     }
-    public static void startConnect(OnStartConnectListener onStartConnectListener){
-        startConnect(onStartConnectListener, null, new OnCreateBondResultListener() {
+    public static void startConnect(OnConnectListener onConnectListener){
+        startConnect(onConnectListener, null, new OnCreateBondResultListener() {
             @Override
             public void onCreateBondSuccess() {
 
@@ -350,6 +477,10 @@ public class Bluetooth {
 
             }
         });
+    }
+
+    public static void startConnect(){
+        startConnect(null);
     }
 
     public static void createBond(ABSCreateBondStrategy createBondStrategy){
