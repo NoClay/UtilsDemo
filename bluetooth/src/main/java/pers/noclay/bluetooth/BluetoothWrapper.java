@@ -17,36 +17,38 @@ public class BluetoothWrapper {
     private boolean mAutoPairAble;
     private String mPairPassword;
     private BluetoothReceiver mReceiver;
-    private long mDiscoverableTime;
+    private long mDiscoverableTimeThreshold;
     private String mTargetAddress;
+    private long mConnectTimeThreshold;
 
-    static void config(BluetoothConfig config, OnBTDeviceDiscoveryListener listener){
+    static void config(BluetoothConfig config){
         if (instance == null){
             synchronized (BluetoothWrapper.class){
                 if (instance == null){
-                    instance = new BluetoothWrapper(config, listener);
+                    instance = new BluetoothWrapper(config);
                 }
             }
         }
     }
 
-    public BluetoothWrapper(BluetoothConfig config, OnBTDeviceDiscoveryListener listener) {
+    public BluetoothWrapper(BluetoothConfig config) {
         this.mContext = config.mContext;
         this.mUUID = config.mUUID == null ? UUID.fromString(BluetoothConstant.DEFAULT_UUID) : config.mUUID;
         this.mHoldLongConnectAble = config.mHoldLongConnectAble;
         this.mAutoPairAble = config.mAutoPairAble;
         this.mPairPassword = config.mPairPassword;
-        this.mReceiver = listener == null ? new BluetoothReceiver() : new BluetoothReceiver(listener);
-        this.mDiscoverableTime = config.mDiscoverableTime;
+        this.mReceiver = new BluetoothReceiver();
+        this.mDiscoverableTimeThreshold = config.mDiscoverableTimeThreshold;
         this.mTargetAddress = config.mTargetAddress;
+        this.mConnectTimeThreshold = config.mConnectTimeThreshold;
     }
 
     public Activity getActivity(){
         return (Activity) mContext;
     }
 
-    public long getDiscoverableTime() {
-        return mDiscoverableTime;
+    public long getDiscoverableTimeThreshold() {
+        return mDiscoverableTimeThreshold;
     }
 
     public Context getContext() {
@@ -94,10 +96,6 @@ public class BluetoothWrapper {
         mAutoPairAble = autoPairAble;
     }
 
-    public static void setInstance(BluetoothWrapper instance) {
-        BluetoothWrapper.instance = instance;
-    }
-
     public void setContext(Context context) {
         mContext = context;
     }
@@ -118,7 +116,15 @@ public class BluetoothWrapper {
         mReceiver = receiver;
     }
 
-    public void setDiscoverableTime(long discoverableTime) {
-        mDiscoverableTime = discoverableTime;
+    public long getConnectTimeThreshold() {
+        return mConnectTimeThreshold;
+    }
+
+    public void setConnectTimeThreshold(long connectTimeThreshold) {
+        mConnectTimeThreshold = connectTimeThreshold;
+    }
+
+    public void setDiscoverableTimeThreshold(long discoverableTimeThreshold) {
+        mDiscoverableTimeThreshold = discoverableTimeThreshold;
     }
 }

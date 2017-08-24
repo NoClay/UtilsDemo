@@ -16,7 +16,10 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static android.app.Activity.RESULT_OK;
 
@@ -31,34 +34,13 @@ public class Bluetooth {
     private static BluetoothWrapper sBluetoothWrapper;
     private static OnPrepareBluetoothListener sPrepareBluetoothListener;
     private static ABSCreateBondStrategy sCustomCreateBondStrategy;
+    private static OnCreateBondResultListener sOnCreateBondResultListener;
     private static IBluetoothConnection sIBluetoothConnection;
     private static OnConnectListener sOnConnectListener;
+    private static Timer sTimer;
     private static boolean sHasConnected = false;
+    private static AtomicBoolean sIsSupportBluetooth;
     private static final String TAG = "Bluetooth";
-
-    private Bluetooth() {
-    }
-
-    public static void initialize(BluetoothConfig config) {
-        initialize(config, null);
-    }
-
-
-    public static void initialize(BluetoothConfig config, OnBTDeviceDiscoveryListener listener) {
-        if (isSupportedBluetooth()) {
-            BluetoothWrapper.config(config, listener);
-            sBluetoothWrapper = BluetoothWrapper.getInstance();
-            registerBluetoothReceiver();
-            Context context = sBluetoothWrapper.getApplicationContext();
-            Intent intent = new Intent(context, BluetoothConnectionService.class);
-            Log.d(TAG, "initialize: wrapper = " + sBluetoothWrapper);
-            intent.putExtra(BluetoothConstant.VALUE_UUID, sBluetoothWrapper.getUUID().toString());
-            context.bindService(intent, sServiceConnection, Context.BIND_AUTO_CREATE);
-            sHasConnected = false;
-        }
-    }
-
-
     private static IBinder.DeathRecipient sDeathRecipient = new IBinder.DeathRecipient() {
         @Override
         public void binderDied() {
@@ -72,6 +54,7 @@ public class Bluetooth {
         }
     };
 
+
     private static IBluetoothReceiverListener sIBluetoothReceiverListener = new IBluetoothReceiverListener.Stub() {
         @Override
         public void onConnectStart() throws RemoteException {
@@ -79,6 +62,19 @@ public class Bluetooth {
             if (sOnConnectListener != null){
                 sOnConnectListener.onConnectStart();
             }
+            sTimer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    sBluetoothWrapper.getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (!sHasConnected && sOnConnectListener != null){
+                                sOnConnectListener.onConnectFail(BluetoothConstant.ERROR_TIME_OUT);
+                            }
+                        }
+                    });
+                }
+            }, sBluetoothWrapper.getConnectTimeThreshold() * 1000);
         }
 
         @Override
@@ -94,7 +90,7 @@ public class Bluetooth {
         public void onConnectFailed() throws RemoteException {
             Log.d(TAG, "onConnectFailed: 连接失败");
             if (sOnConnectListener != null){
-                sOnConnectListener.onConnectFail();
+                sOnConnectListener.onConnectFail(BluetoothConstant.ERROR_TIME_OUT);
             }
         }
 
@@ -108,19 +104,6 @@ public class Bluetooth {
 
     };
 
-    public static boolean isHasConnected() {
-        return sHasConnected;
-    }
-
-    public static void sendMessage(String message){
-        if (sHasConnected){
-            try {
-                sIBluetoothConnection.sendMessage(message);
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
-        }
-    }
     private static ServiceConnection sServiceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
@@ -139,41 +122,154 @@ public class Bluetooth {
         }
     };
 
-    public static void setBluetoothWrapper(BluetoothWrapper wrapper) {
-        sBluetoothWrapper = wrapper;
-    }
 
-    private static void registerBluetoothReceiver(String[] filters) {
-        BluetoothReceiver receiver = sBluetoothWrapper.getReceiver();
-        Context context = sBluetoothWrapper.getApplicationContext();
-        IntentFilter filter;
-        for (String action : filters) {
-            filter = new IntentFilter(action);
-            context.registerReceiver(receiver, filter);
+    /**
+     * BluetoothConfig，初始化蓝牙SDK
+     * @param config
+     */
+    public static void initialize(BluetoothConfig config) {
+        if (isSupportedBluetooth()) {
+            BluetoothWrapper.config(config);
+            sBluetoothWrapper = BluetoothWrapper.getInstance();
+            registerBluetoothReceiver();
+            Intent intent = new Intent(sBluetoothWrapper.getApplicationContext(), BluetoothConnectionService.class);
+            intent.putExtra(BluetoothConstant.VALUE_UUID, sBluetoothWrapper.getUUID().toString());
+            sBluetoothWrapper.getApplicationContext().bindService(intent, sServiceConnection, Context.BIND_AUTO_CREATE);
+            sHasConnected = false;
+            //设置定时器
+            sTimer = new Timer(BluetoothConstant.getConnectName());
         }
     }
 
-    public static void registerBluetoothReceiver(){
-        registerBluetoothReceiver(BluetoothConstant.DEFAULT_BROADCAST_ACTIONS);
+    /**
+     * 外部调用，发送message给已连接设备
+     * @param message
+     */
+    public static void sendMessage(String message) throws BluetoothException {
+        if (sHasConnected){
+            try {
+                sIBluetoothConnection.sendMessage(message);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+        throw new BluetoothException(BluetoothConstant.ERROR_NOT_CONNECTED);
     }
 
-
-    private static void unregisterBluetoothReceiver() {
-        sBluetoothWrapper.getApplicationContext()
-                .unregisterReceiver(sBluetoothWrapper.getReceiver());
+    /**
+     * 获取已经配对的设备
+     * @return
+     */
+    public static List<BluetoothDevice> getBondedBTDevices() {
+        if (!isSupportedBluetooth()) {
+            return null;
+        } else {
+            Set<BluetoothDevice> temp = sBluetoothAdapter.getBondedDevices();
+            if (sBondedBTDevices == null) {
+                sBondedBTDevices = new ArrayList<>();
+            } else {
+                sBondedBTDevices.clear();
+            }
+            for (BluetoothDevice blue : temp) {
+                sBondedBTDevices.add(blue);
+            }
+            return sBondedBTDevices;
+        }
     }
 
-    public static boolean isSupportedBluetooth() {
-        if (sBluetoothAdapter == null) {
+    public static void startConnect(ABSCreateBondStrategy createBondStrategy,
+                                    OnCreateBondResultListener onCreateBondResultListener) {
+        if (!isBonded(getTargetAddress())){
+            //开始配对
+            if (createBondStrategy != null){
+                if (onCreateBondResultListener != null){
+                    createBondStrategy.setOnCreateBondResultListener(onCreateBondResultListener);
+                }
+                createBond(createBondStrategy);
+            }else{
+                createBond(onCreateBondResultListener);
+            }
+        }
+        //开始配对
+        if (isBonded(getTargetAddress())){
+            try {
+                sIBluetoothConnection.connect(getTargetAddress());
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public static void startConnect(ABSCreateBondStrategy createBondStrategy){
+        startConnect(createBondStrategy, null);
+    }
+
+    public static void startConnect(
+                                    OnCreateBondResultListener onCreateBondResultListener){
+        startConnect(null, onCreateBondResultListener);
+    }
+
+    public static void startConnect(){
+        startConnect(null, null);
+    }
+
+    public static void createBond(ABSCreateBondStrategy createBondStrategy){
+        sBluetoothWrapper.getReceiver().setCreateBondStrategy(createBondStrategy);
+        if (getTargetAddress() != null){
+            try {
+                Log.d(TAG, "createBond: target = " + getTargetAddress());
+                BluetoothUtils.createBond(getTargetDevice().getClass(), getTargetDevice());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }else if (sOnCreateBondResultListener != null){
+            sOnCreateBondResultListener.onCreateBondFail(BluetoothConstant.ERROR_NO_SUCH_MAC_ADDRESS);
+        }
+    }
+
+    public static void createBond(OnCreateBondResultListener onCreateBondResultListener){
+        if (sCustomCreateBondStrategy == null){
+            if (sBluetoothWrapper.isAutoPairAble()){
+                //自动配对
+                createBond(new BluetoothAutoCreateBondStrategy(getTargetDevice(),
+                        sBluetoothWrapper.getContext(),
+                        sBluetoothWrapper.getReceiver(),
+                        onCreateBondResultListener));
+            }else{
+                createBond(new BluetoothCreateBondStrategy(getTargetDevice(), onCreateBondResultListener));
+            }
+        }else{
+            sCustomCreateBondStrategy.setOnCreateBondResultListener(onCreateBondResultListener);
+            createBond(sCustomCreateBondStrategy);
+        }
+    }
+
+    public static boolean isBonded(String address) {
+        getBondedBTDevices();
+        for (BluetoothDevice device : sBondedBTDevices) {
+            if (device.getAddress().equals(address)){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean isSupportedBluetooth(){
+        if (sBluetoothAdapter == null && sIsSupportBluetooth == null) {
             sBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         }
-        if (sBluetoothAdapter == null) {
+        sIsSupportBluetooth = sBluetoothAdapter == null ? new AtomicBoolean(false) : new AtomicBoolean(true);
+        if (!sIsSupportBluetooth.get()) {
             if (sPrepareBluetoothListener != null) {
                 sPrepareBluetoothListener.onNonSupportable(BluetoothConstant.NON_SUPPORT_BLUETOOTH);
             }
-            return false;
+            try {
+                throw new BluetoothException(BluetoothConstant.ERROR_BLUETOOTH_NOT_SUPPORTABLE);
+            } catch (BluetoothException e) {
+                e.printStackTrace();
+            }
         }
-        return true;
+        return sIsSupportBluetooth.get();
     }
 
 
@@ -204,16 +300,7 @@ public class Bluetooth {
 
 
     public static void startSearch() {
-        openBluetooth();
-        requestPermission();
-        openBluetoothDiscoverable();
-        if (!isSupportedBluetooth()) {
-            return;
-        }
-        if (sBluetoothAdapter.isDiscovering()) {
-            return;
-        }
-        sBluetoothAdapter.startDiscovery();
+        startSearch(null);
     }
 
     public static void startSearch(OnFinishDiscoveryDevice onlineDevices) {
@@ -226,12 +313,14 @@ public class Bluetooth {
         if (sBluetoothAdapter.isDiscovering()) {
             return;
         }
-        sBluetoothWrapper.getReceiver().setOnFinishDiscoveryDevice(onlineDevices);
+        if (onlineDevices != null){
+            sBluetoothWrapper.getReceiver().setOnFinishDiscoveryDevice(onlineDevices);
+        }
         sBluetoothAdapter.startDiscovery();
     }
 
 
-    private static void openBluetooth() {
+    public static void openBluetooth() {
         if (isSupportedBluetooth() && !isBluetoothEnable()) {
             Context context = sBluetoothWrapper.getContext();
             Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -247,12 +336,12 @@ public class Bluetooth {
         return false;
     }
 
-    public static UUID getUUID(){
-        if (isSupportedBluetooth()){
-            return sBluetoothWrapper.getUUID();
-        }
-        return null;
-    }
+    /**
+     * 私有方法区域
+     */
+    /**
+     * 属性方法区域
+     */
 
     public static void requestPermission() {
         Activity activity = (Activity) sBluetoothWrapper.getContext();
@@ -285,6 +374,25 @@ public class Bluetooth {
         }
     }
 
+
+
+    private static void registerBluetoothReceiver() {
+        BluetoothReceiver receiver = sBluetoothWrapper.getReceiver();
+        Context context = sBluetoothWrapper.getApplicationContext();
+        IntentFilter filter;
+        for (String action : BluetoothConstant.DEFAULT_BROADCAST_ACTIONS) {
+            filter = new IntentFilter(action);
+            context.registerReceiver(receiver, filter);
+        }
+    }
+
+
+    private static void unregisterBluetoothReceiver() {
+        sBluetoothWrapper.getApplicationContext()
+                .unregisterReceiver(sBluetoothWrapper.getReceiver());
+    }
+
+
     /**
      * 打开蓝牙的可见性，在我测试的小米6.0上，无法计时关闭可见性
      */
@@ -292,8 +400,22 @@ public class Bluetooth {
         //开启蓝牙可见性
         if (sBluetoothAdapter.getScanMode() != BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
             Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-            intent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 120);
+            intent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, sBluetoothWrapper.getDiscoverableTimeThreshold());
             sBluetoothWrapper.getActivity().startActivity(intent);
+            sTimer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    sBluetoothWrapper.getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (sPrepareBluetoothListener != null){
+                                closeBluetoothDiscoverable();
+                                sPrepareBluetoothListener.onCloseBluetoothDiscoverable();
+                            }
+                        }
+                    });
+                }
+            }, sBluetoothWrapper.getDiscoverableTimeThreshold() * 1000);
         }
         if (sPrepareBluetoothListener != null) {
             sPrepareBluetoothListener.onOpenBluetoothDiscoverable();
@@ -316,6 +438,27 @@ public class Bluetooth {
             e.printStackTrace();
         }
     }
+
+
+    public static boolean isHasConnected() {
+        return sHasConnected;
+    }
+
+    public static OnConnectListener getOnConnectListener() {
+        return sOnConnectListener;
+    }
+
+    public static void setOnConnectListener(OnConnectListener onConnectListener) {
+        sOnConnectListener = onConnectListener;
+    }
+
+    public static BluetoothDevice getTargetDevice(){
+        if (isSupportedBluetooth() && getTargetAddress() != null){
+            return sBluetoothAdapter.getRemoteDevice(getTargetAddress());
+        }
+        return null;
+    }
+
 
     public static OnPrepareBluetoothListener getPrepareBluetoothListener() {
         return sPrepareBluetoothListener;
@@ -371,26 +514,27 @@ public class Bluetooth {
         return null;
     }
 
-    public static void setTargetAddress(String targetAddress) {
-        if (isSupportedBluetooth()) {
-            sBluetoothWrapper.setTargetAddress(BluetoothUtils.getMacAddress(targetAddress));
+    public static void setBluetoothWrapper(BluetoothWrapper wrapper) {
+        sBluetoothWrapper = wrapper;
+    }
+    public static UUID getUUID(){
+        if (isSupportedBluetooth()){
+            return sBluetoothWrapper.getUUID();
         }
+        return null;
     }
 
-    public static List<BluetoothDevice> getBondedBTDevices() {
-        if (!isSupportedBluetooth()) {
-            return null;
-        } else {
-            Set<BluetoothDevice> temp = sBluetoothAdapter.getBondedDevices();
-            if (sBondedBTDevices == null) {
-                sBondedBTDevices = new ArrayList<>();
-            } else {
-                sBondedBTDevices.clear();
+    public static void setTargetAddress(String targetAddress){
+        if (isSupportedBluetooth()) {
+            String temp = BluetoothUtils.getMacAddress(targetAddress);
+            if (temp != null){
+                sBluetoothWrapper.setTargetAddress(BluetoothUtils.getMacAddress(targetAddress));
             }
-            for (BluetoothDevice blue : temp) {
-                sBondedBTDevices.add(blue);
-            }
-            return sBondedBTDevices;
+        }
+        try {
+            throw new BluetoothException(targetAddress, BluetoothConstant.ERROR_NO_SUCH_MAC_ADDRESS);
+        } catch (BluetoothException e) {
+            e.printStackTrace();
         }
     }
 
@@ -400,132 +544,5 @@ public class Bluetooth {
 
     public static BluetoothAdapter getBluetoothAdapter() {
         return sBluetoothAdapter;
-    }
-
-    public static void startConnect(OnConnectListener onConnectListener,
-                                    ABSCreateBondStrategy createBondStrategy,
-                                    OnCreateBondResultListener onCreateBondResultListener) {
-        if (onConnectListener != null){
-            setOnConnectListener(onConnectListener);
-        }
-        if (!isBonded(getTargetAddress())){
-            //开始配对
-            if (createBondStrategy != null){
-                if (onCreateBondResultListener != null){
-                    createBondStrategy.setOnCreateBondResultListener(onCreateBondResultListener);
-                }
-                createBond(createBondStrategy);
-            }else{
-                createBond(onCreateBondResultListener);
-            }
-        }
-        //开始配对
-        if (isBonded(getTargetAddress())){
-            try {
-                sIBluetoothConnection.connect(getTargetAddress());
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public static OnConnectListener getOnConnectListener() {
-        return sOnConnectListener;
-    }
-
-    public static void setOnConnectListener(OnConnectListener onConnectListener) {
-        sOnConnectListener = onConnectListener;
-    }
-
-    public static void startConnect(OnConnectListener onConnectListener, ABSCreateBondStrategy createBondStrategy){
-        startConnect(onConnectListener, createBondStrategy, new OnCreateBondResultListener() {
-            @Override
-            public void onCreateBondSuccess() {
-
-            }
-
-            @Override
-            public void onCreateBondFail() {
-
-            }
-
-            @Override
-            public void onCreateBonding() {
-
-            }
-        });
-    }
-
-    public static void startConnect(OnConnectListener onConnectListener,
-                                    OnCreateBondResultListener onCreateBondResultListener){
-        startConnect(onConnectListener, null, onCreateBondResultListener);
-    }
-    public static void startConnect(OnConnectListener onConnectListener){
-        startConnect(onConnectListener, null, new OnCreateBondResultListener() {
-            @Override
-            public void onCreateBondSuccess() {
-
-            }
-
-            @Override
-            public void onCreateBondFail() {
-
-            }
-
-            @Override
-            public void onCreateBonding() {
-
-            }
-        });
-    }
-
-    public static void startConnect(){
-        startConnect(null);
-    }
-
-    public static void createBond(ABSCreateBondStrategy createBondStrategy){
-        sBluetoothWrapper.getReceiver().setCreateBondStrategy(createBondStrategy);
-        if (getTargetAddress() != null){
-            try {
-                Log.d(TAG, "createBond: target = " + getTargetAddress());
-                BluetoothUtils.createBond(getTargetDevice().getClass(), getTargetDevice());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public static void createBond(OnCreateBondResultListener onCreateBondResultListener){
-        if (sCustomCreateBondStrategy == null){
-            if (sBluetoothWrapper.isAutoPairAble()){
-                //自动配对
-                createBond(new BluetoothAutoCreateBondStrategy(getTargetDevice(),
-                        sBluetoothWrapper.getContext(),
-                        sBluetoothWrapper.getReceiver(),
-                        onCreateBondResultListener));
-            }else{
-                createBond(new BluetoothCreateBondStrategy(getTargetDevice(), onCreateBondResultListener));
-            }
-        }else{
-            sCustomCreateBondStrategy.setOnCreateBondResultListener(onCreateBondResultListener);
-            createBond(sCustomCreateBondStrategy);
-        }
-    }
-
-    public static BluetoothDevice getTargetDevice(){
-        if (isSupportedBluetooth() && getTargetAddress() != null){
-            return sBluetoothAdapter.getRemoteDevice(getTargetAddress());
-        }
-        return null;
-    }
-
-    public static boolean isBonded(String address) {
-        getBondedBTDevices();
-        for (BluetoothDevice device : sBondedBTDevices) {
-            if (device.getAddress().equals(address)){
-                return true;
-            }
-        }
-        return false;
     }
 }

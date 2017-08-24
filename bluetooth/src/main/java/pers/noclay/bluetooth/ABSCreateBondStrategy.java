@@ -13,6 +13,7 @@ public abstract class ABSCreateBondStrategy implements CreateBondStrategy {
         return mOnCreateBondResultListener;
     }
 
+
     public void setOnCreateBondResultListener(OnCreateBondResultListener onCreateBondResultListener) {
         mOnCreateBondResultListener = onCreateBondResultListener;
     }

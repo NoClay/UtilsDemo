@@ -16,9 +16,9 @@ import java.util.List;
 
 public final class BluetoothReceiver extends BroadcastReceiver{
     private static final String TAG = "BluetoothReceiver";
+    private List<BluetoothDevice> mOnlineDevices;
     private OnBTDeviceDiscoveryListener mOnBTDeviceDiscoveryListener;
     private OnFinishDiscoveryDevice mOnFinishDiscoveryDevice;
-    private List<BluetoothDevice> mOnlineDevices;
     private OnBTBroadCastListener mBroadCastListener;
     private CreateBondStrategy mCreateBondStrategy;
 
@@ -46,11 +46,6 @@ public final class BluetoothReceiver extends BroadcastReceiver{
         mCreateBondStrategy = createBondStrategy;
     }
 
-    public BluetoothReceiver(OnBTDeviceDiscoveryListener onBTDeviceDiscoveryListener) {
-        mOnBTDeviceDiscoveryListener = onBTDeviceDiscoveryListener;
-        mOnlineDevices = new ArrayList<>();
-    }
-
     public OnFinishDiscoveryDevice getOnFinishDiscoveryDevice() {
         return mOnFinishDiscoveryDevice;
     }
@@ -60,7 +55,7 @@ public final class BluetoothReceiver extends BroadcastReceiver{
     }
 
     public BluetoothReceiver() {
-        this(null);
+        mOnlineDevices = new ArrayList<>();
     }
 
     @Override

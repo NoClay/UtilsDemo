@@ -24,6 +24,7 @@ import java.util.List;
 
 import pers.noclay.bluetooth.Bluetooth;
 import pers.noclay.bluetooth.BluetoothConfig;
+import pers.noclay.bluetooth.BluetoothException;
 import pers.noclay.bluetooth.BluetoothUtils;
 import pers.noclay.bluetooth.OnFinishDiscoveryDevice;
 import pers.noclay.bluetooth.OnPrepareBluetoothListener;
@@ -99,7 +100,11 @@ public class WeChatActivity extends AppCompatActivity implements View.OnClickLis
             }
             case R.id.send:{
                 if (Bluetooth.isHasConnected()){
-                    Bluetooth.sendMessage(editText.getText().toString());
+                    try {
+                        Bluetooth.sendMessage(editText.getText().toString());
+                    } catch (BluetoothException e) {
+                        e.printStackTrace();
+                    }
                     MessageForChat chat = new MessageForChat(true, editText.getText().toString());
                     messageList.add(chat);
                     adapter.notifyDataSetChanged();
@@ -131,7 +136,7 @@ public class WeChatActivity extends AppCompatActivity implements View.OnClickLis
                                         "正在连接" + message.getName() + " 地址：" + message.getAddress(),
                                         Toast.LENGTH_SHORT).show();
                                 Bluetooth.setTargetAddress(message.getAddress());
-                                Bluetooth.startConnect(WeChatActivity.this);
+                                Bluetooth.startConnect();
                             }
                         }, bluetoothDeviceAdapter);
                 select.showAtLocation(findViewById(R.id.main_layout),
@@ -174,7 +179,7 @@ public class WeChatActivity extends AppCompatActivity implements View.OnClickLis
     }
 
     @Override
-    public void onConnectFail() {
+    public void onConnectFail(int errorCode) {
 
     }
 

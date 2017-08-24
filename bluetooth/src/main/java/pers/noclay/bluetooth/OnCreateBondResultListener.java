@@ -6,6 +6,6 @@ package pers.noclay.bluetooth;
 
 public interface OnCreateBondResultListener {
     void onCreateBondSuccess();
-    void onCreateBondFail();
+    void onCreateBondFail(int errorCode);
     void onCreateBonding();
 }

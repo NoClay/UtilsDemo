@@ -14,18 +14,21 @@ public class BluetoothConfig {
     public boolean mHoldLongConnectAble;
     public boolean mAutoPairAble;
     public String mPairPassword;
-    public long mDiscoverableTime;
+    public long mDiscoverableTimeThreshold;
+    public long mConnectTimeThreshold;
     public String mTargetAddress;
 
     private BluetoothConfig(Context context, UUID UUID, boolean holdLongConnectAble,
-                            boolean autoPairAble, String pairPassword, long discoverableTime, String targetAddress) {
+                            boolean autoPairAble, String pairPassword, long discoverableTimeThreshold,
+                            String targetAddress, long connectTimeThreshold) {
         mContext = context;
         mUUID = UUID;
         mHoldLongConnectAble = holdLongConnectAble;
         mAutoPairAble = autoPairAble;
         mPairPassword = pairPassword;
-        mDiscoverableTime = discoverableTime;
+        mDiscoverableTimeThreshold = discoverableTimeThreshold;
         mTargetAddress = targetAddress;
+        mConnectTimeThreshold = connectTimeThreshold;
     }
 
     public static final class Builder{
@@ -36,10 +39,12 @@ public class BluetoothConfig {
         private String mPairPassword;
         private long mDiscoverableTime;
         private String mTargetAddress;
+        private long mConnectTime;
 
         public Builder(Context context) {
             mContext = context;
-            this.mDiscoverableTime = BluetoothConstant.DEFAULT_DISCOVERABLE_TIME;
+            this.mDiscoverableTime = BluetoothConstant.DEFAULT_DISCOVERABLE_TIME_THRESHOLD;
+            this.mConnectTime = BluetoothConstant.DEFAULT_CONNECT_TIME_THRESHOLD;
         }
 
         public Builder setUUID(String uuid){
@@ -78,10 +83,15 @@ public class BluetoothConfig {
             this.mTargetAddress = targetAddress;
             return this;
         }
+        
+        public Builder setConnectTime(long connectTime){
+            this.mConnectTime = connectTime;
+            return this;
+        }
 
         public BluetoothConfig build(){
             return new BluetoothConfig(mContext, mUUID, mHoldLongConnectAble,
-                    mAutoPairAble, mPairPassword, mDiscoverableTime, mTargetAddress);
+                    mAutoPairAble, mPairPassword, mDiscoverableTime, mTargetAddress, mConnectTime);
         }
 
     }

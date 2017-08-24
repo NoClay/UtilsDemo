@@ -5,7 +5,7 @@ package pers.noclay.bluetooth;
  */
 
 public interface OnConnectListener {
-    void onConnectFail();
+    void onConnectFail(int errorCode);
     void onConnectSuccess();
     void onConnectStart();
     void onReceiveMessage(byte[] bytes);

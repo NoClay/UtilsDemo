@@ -25,15 +25,21 @@ public class BluetoothCreateBondStrategy extends ABSCreateBondStrategy {
         mTheDestDevice = Bluetooth.getBluetoothAdapter().getRemoteDevice(mTheDestDevice.getAddress());
         switch (mTheDestDevice.getBondState()){
             case BluetoothDevice.BOND_BONDED:{
-                mOnCreateBondResultListener.onCreateBondSuccess();
+                if (mOnCreateBondResultListener != null){
+                    mOnCreateBondResultListener.onCreateBondSuccess();
+                }
                 break;
             }
             case BluetoothDevice.BOND_BONDING:{
-                mOnCreateBondResultListener.onCreateBonding();
+                if (mOnCreateBondResultListener != null){
+                    mOnCreateBondResultListener.onCreateBonding();
+                }
                 break;
             }
             case BluetoothDevice.BOND_NONE:{
-                mOnCreateBondResultListener.onCreateBondFail();
+                if (mOnCreateBondResultListener != null){
+                    mOnCreateBondResultListener.onCreateBondFail(BluetoothConstant.ERROR_TIME_OUT);
+                }
                 break;
             }
         }

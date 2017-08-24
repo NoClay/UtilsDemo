@@ -73,9 +73,24 @@ public class BluetoothConstant {
 
 
     private static final int ERROR_CODE = 2 << 10;
+    public static final int ERROR_NO_SUCH_MAC_ADDRESS = ERROR_CODE + 1;
+    public static final int ERROR_NO_SUCH_DEVICE = ERROR_CODE + 2;
+    public static final int ERROR_TIME_OUT = ERROR_CODE + 3;
+    public static final int ERROR_AUTO_PAIR_NOT_MATCH = ERROR_CODE + 4;
+    public static final int ERROR_NOT_CONNECTED = ERROR_CODE + 5;
+    public static final int ERROR_BLUETOOTH_NOT_SUPPORTABLE = ERROR_CODE + 6;
 
-    public static final int DEFAULT_DISCOVERABLE_TIME = 120;
+    public static final String []ERROR_TIPS = {
+            "No Such MAC Address : ",
+            "No Such Bluetooth Device : ",
+            "Connect or createBond time out!",
+            "Auto pair failed ! Because the passwords to autoPair aren't matched!",
+            "There is no connected device!",
+            "Your device isn't support bluetooth!"
+    };
 
+    public static final int DEFAULT_DISCOVERABLE_TIME_THRESHOLD = 120;
+    public static final int DEFAULT_CONNECT_TIME_THRESHOLD = 60;
     public static String getConnectName() {
         return CONNECT_NAME + "_" + new Random().nextInt(1000);
     }
