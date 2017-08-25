@@ -17,10 +17,11 @@ public class BluetoothConfig {
     public long mDiscoverableTimeThreshold;
     public long mConnectTimeThreshold;
     public String mTargetAddress;
+    public boolean mServerEnable = true;
 
     private BluetoothConfig(Context context, UUID UUID, boolean holdLongConnectAble,
                             boolean autoPairAble, String pairPassword, long discoverableTimeThreshold,
-                            String targetAddress, long connectTimeThreshold) {
+                            String targetAddress, long connectTimeThreshold, boolean serverEnable) {
         mContext = context;
         mUUID = UUID;
         mHoldLongConnectAble = holdLongConnectAble;
@@ -29,6 +30,7 @@ public class BluetoothConfig {
         mDiscoverableTimeThreshold = discoverableTimeThreshold;
         mTargetAddress = targetAddress;
         mConnectTimeThreshold = connectTimeThreshold;
+        mServerEnable = serverEnable;
     }
 
     public static final class Builder{
@@ -40,12 +42,14 @@ public class BluetoothConfig {
         private long mDiscoverableTime;
         private String mTargetAddress;
         private long mConnectTime;
+        private boolean mServerEnable = true;
 
         public Builder(Context context) {
             mContext = context;
             this.mDiscoverableTime = BluetoothConstant.DEFAULT_DISCOVERABLE_TIME_THRESHOLD;
             this.mConnectTime = BluetoothConstant.DEFAULT_CONNECT_TIME_THRESHOLD;
         }
+
 
         public Builder setUUID(String uuid){
             this.mUUID = UUID.fromString(uuid);
@@ -54,6 +58,11 @@ public class BluetoothConfig {
 
         public Builder setUUID(UUID uuid){
             this.mUUID = uuid;
+            return this;
+        }
+
+        public Builder setServerEnable(boolean serverEnable) {
+            mServerEnable = serverEnable;
             return this;
         }
 
@@ -91,7 +100,7 @@ public class BluetoothConfig {
 
         public BluetoothConfig build(){
             return new BluetoothConfig(mContext, mUUID, mHoldLongConnectAble,
-                    mAutoPairAble, mPairPassword, mDiscoverableTime, mTargetAddress, mConnectTime);
+                    mAutoPairAble, mPairPassword, mDiscoverableTime, mTargetAddress, mConnectTime, mServerEnable);
         }
 
     }

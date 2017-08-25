@@ -20,6 +20,7 @@ public class BluetoothWrapper {
     private long mDiscoverableTimeThreshold;
     private String mTargetAddress;
     private long mConnectTimeThreshold;
+    private boolean mServerEnable;
 
     static void config(BluetoothConfig config){
         if (instance == null){
@@ -41,6 +42,7 @@ public class BluetoothWrapper {
         this.mDiscoverableTimeThreshold = config.mDiscoverableTimeThreshold;
         this.mTargetAddress = config.mTargetAddress;
         this.mConnectTimeThreshold = config.mConnectTimeThreshold;
+        this.mServerEnable = config.mServerEnable;
     }
 
     public Activity getActivity(){
@@ -126,5 +128,13 @@ public class BluetoothWrapper {
 
     public void setDiscoverableTimeThreshold(long discoverableTimeThreshold) {
         mDiscoverableTimeThreshold = discoverableTimeThreshold;
+    }
+
+    public boolean isServerEnable() {
+        return mServerEnable;
+    }
+
+    public void setServerEnable(boolean serverEnable) {
+        mServerEnable = serverEnable;
     }
 }

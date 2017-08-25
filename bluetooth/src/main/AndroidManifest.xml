@@ -12,5 +12,4 @@
             android:name=".BluetoothConnectionService"
             android:process=":bluetooth"/>
     </application>
-
 </manifest>

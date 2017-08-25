@@ -7,7 +7,7 @@ import android.content.Intent;
  * Created by i-gaolonghai on 2017/8/21.
  */
 
-public interface CreateBondStrategy {
-    void onBTDevicePairingReQuest(Intent intent);
+interface CreateBondStrategy {
+    void onBTDevicePairingRequest(Intent intent);
     void onBTDeviceBondStateChanged(Intent intent);
 }

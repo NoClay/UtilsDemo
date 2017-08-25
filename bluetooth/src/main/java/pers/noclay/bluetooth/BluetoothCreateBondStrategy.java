@@ -16,7 +16,7 @@ public class BluetoothCreateBondStrategy extends ABSCreateBondStrategy {
     }
 
     @Override
-    public void onBTDevicePairingReQuest(Intent intent) {
+    public void onBTDevicePairingRequest(Intent intent) {
 
     }
 

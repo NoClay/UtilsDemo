@@ -47,6 +47,8 @@ public class BluetoothConstant {
     private static final String CONNECT_NAME = "Bluetooth";
 
     public static final String VALUE_UUID = "valueUUID";
+    public static final String VALUE_HOLD_LONG_CONNECT = "valueHoldLongConnectAble";
+    public static final String VALUE_SERVER_ENABLE = "valueServerEnable";
 
     private static final int REQUEST_CODE = 2 << 10;
     public static final int REQUEST_OPEN_BLUETOOTH = REQUEST_CODE + 1;
@@ -91,6 +93,7 @@ public class BluetoothConstant {
 
     public static final int DEFAULT_DISCOVERABLE_TIME_THRESHOLD = 120;
     public static final int DEFAULT_CONNECT_TIME_THRESHOLD = 60;
+    public static final int DEFAULT_CONNECT_CHECK = 300;
     public static String getConnectName() {
         return CONNECT_NAME + "_" + new Random().nextInt(1000);
     }

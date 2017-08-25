@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
+import java.util.Timer;
 
 /**
  * Created by i-gaolonghai on 2017/8/22.
@@ -22,7 +23,6 @@ public class ConnectThread extends Thread {
     byte[] bytes = new byte[1024];
     private int mArg;
     private Handler mHandler;
-
 
     public BluetoothSocket getBluetoothSocket() {
         return mBluetoothSocket;

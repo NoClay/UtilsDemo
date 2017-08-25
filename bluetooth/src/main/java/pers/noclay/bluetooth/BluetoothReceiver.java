@@ -20,7 +20,7 @@ public final class BluetoothReceiver extends BroadcastReceiver{
     private OnBTDeviceDiscoveryListener mOnBTDeviceDiscoveryListener;
     private OnFinishDiscoveryDevice mOnFinishDiscoveryDevice;
     private OnBTBroadCastListener mBroadCastListener;
-    private CreateBondStrategy mCreateBondStrategy;
+    private ABSCreateBondStrategy mCreateBondStrategy;
 
     public OnBTDeviceDiscoveryListener getOnBTDeviceDiscoveryListener() {
         return mOnBTDeviceDiscoveryListener;
@@ -38,11 +38,11 @@ public final class BluetoothReceiver extends BroadcastReceiver{
         mBroadCastListener = broadCastListener;
     }
 
-    public CreateBondStrategy getCreateBondStrategy() {
+    public ABSCreateBondStrategy getCreateBondStrategy() {
         return mCreateBondStrategy;
     }
 
-    public void setCreateBondStrategy(CreateBondStrategy createBondStrategy) {
+    public void setCreateBondStrategy(ABSCreateBondStrategy createBondStrategy) {
         mCreateBondStrategy = createBondStrategy;
     }
 
@@ -68,7 +68,7 @@ public final class BluetoothReceiver extends BroadcastReceiver{
         switch (action) {
             case BluetoothDevice.ACTION_PAIRING_REQUEST: {
                 if (mCreateBondStrategy != null){
-                    mCreateBondStrategy.onBTDevicePairingReQuest(intent);
+                    mCreateBondStrategy.onBTDevicePairingRequest(intent);
                 }
                 break;
             }

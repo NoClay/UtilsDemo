@@ -13,6 +13,8 @@ import android.os.RemoteException;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -30,27 +32,39 @@ import static pers.noclay.bluetooth.BluetoothConstant.MESSAGE_WAIT_CONNECT;
  */
 
 public class BluetoothConnectionService extends Service {
-    private static final String TAG = "BluetoothConnectionServ";
-    private AtomicBoolean mIsServiceDestoryed = new AtomicBoolean(false);
     private RemoteCallbackList<IBluetoothReceiverListener> mListeners = new RemoteCallbackList<>();
     private ClientThread mClientThread;
     private ServerThread mServerThread;
     private ConnectThread mConnectThread;
+    private boolean mHoldLongConnectAble = false;
+    private boolean mHasConnected = false;
+    private Timer mTimer;
     private UUID mUUID;
     private Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case MESSAGE_CONNECT_SUCCESS: {
-                    BluetoothDevice device = (BluetoothDevice) msg.obj;
                     BluetoothSocket socket = null;
                     if (msg.arg1 == ARG_FROM_CLIENT) {
                         socket = mClientThread.getBluetoothSocket();
                     } else if (msg.arg1 == ARG_FROM_SERVER) {
                         socket = mServerThread.getBluetoothSocket();
                     }
+                    mTimer = new Timer();
+                    mTimer.schedule(new TimerTask() {
+                        @Override
+                        public void run() {
+                            if (mHasConnected && mHoldLongConnectAble && mConnectThread != null && mConnectThread.getBluetoothSocket() != null){
+                                if (!mConnectThread.getBluetoothSocket().isConnected()){
+                                    beginBroadcast(BluetoothConstant.METHOD_ON_CONNECT_FAILED, null, BluetoothConstant.ERROR_NOT_CONNECTED);
+                                }
+                            }
+                        }
+                    }, 0, BluetoothConstant.DEFAULT_CONNECT_CHECK);
                     mConnectThread = new ConnectThread(socket, mHandler, msg.arg1);
                     mConnectThread.start();
+                    mHasConnected = true;
                     beginBroadcast(BluetoothConstant.METHOD_ON_CONNECT_SUCCESS, null, -1);
                     break;
                 }
@@ -85,10 +99,6 @@ public class BluetoothConnectionService extends Service {
             }
         }
 
-        @Override
-        public void sendFile(String path, int type) throws RemoteException {
-
-        }
 
         @Override
         public void registerListener(IBluetoothReceiverListener listener) throws RemoteException {
@@ -113,8 +123,11 @@ public class BluetoothConnectionService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         mUUID = UUID.fromString(intent.getStringExtra(BluetoothConstant.VALUE_UUID));
-        mServerThread = new ServerThread(mHandler, mUUID);
-        mServerThread.start();
+        mHoldLongConnectAble = intent.getBooleanExtra(BluetoothConstant.VALUE_HOLD_LONG_CONNECT, false);
+        if (intent.getBooleanExtra(BluetoothConstant.VALUE_SERVER_ENABLE, true)){
+            mServerThread = new ServerThread(mHandler, mUUID);
+            mServerThread.start();
+        }
         return mBinder;
     }
 
@@ -129,7 +142,7 @@ public class BluetoothConnectionService extends Service {
                 IBluetoothReceiverListener listener = mListeners.getBroadcastItem(i);
                 switch (method) {
                     case BluetoothConstant.METHOD_ON_CONNECT_FAILED: {
-                        listener.onConnectFailed();
+                        listener.onConnectFailed(type);
                         break;
                     }
                     case BluetoothConstant.METHOD_ON_CONNECT_START: {

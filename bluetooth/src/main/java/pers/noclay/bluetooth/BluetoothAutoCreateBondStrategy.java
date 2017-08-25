@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.text.TextUtils;
 import android.util.Log;
 
 /**
@@ -30,12 +31,14 @@ public class BluetoothAutoCreateBondStrategy extends ABSCreateBondStrategy {
     }
 
     @Override
-    public void onBTDevicePairingReQuest(Intent intent) {
+    public void onBTDevicePairingRequest(Intent intent) {
         try {
             Log.d(TAG, "onBTDevicePairingReQuest: password = " + BluetoothConstant.DEFAULT_PIN[index]);
             if (index < BluetoothConstant.DEFAULT_PIN.length){
                 BluetoothUtils.setPin(mTheDestDevice.getClass(), mTheDestDevice, BluetoothConstant.DEFAULT_PIN[index]);
-            }else if (mOnCreateBondResultListener != null){
+            }else if (!TextUtils.isEmpty(Bluetooth.getPairPassword())){
+                BluetoothUtils.setPin(mTheDestDevice.getClass(), mTheDestDevice, Bluetooth.getPairPassword());
+            } else if (mOnCreateBondResultListener != null){
                 mOnCreateBondResultListener.onCreateBondFail(BluetoothConstant.ERROR_AUTO_PAIR_NOT_MATCH);
             }
             //1.确认配对
@@ -70,7 +73,6 @@ public class BluetoothAutoCreateBondStrategy extends ABSCreateBondStrategy {
                 break;
             }
             case BluetoothDevice.BOND_NONE:{
-                Log.d(TAG, "onBTDeviceBondStateChanged: 配对失败");
                 index ++;
                 if (index < BluetoothConstant.DEFAULT_PIN.length){
                     try {
@@ -81,8 +83,17 @@ public class BluetoothAutoCreateBondStrategy extends ABSCreateBondStrategy {
                     if (mOnCreateBondResultListener != null) {
                         mOnCreateBondResultListener.onCreateBonding();
                     }
+                }else if (index == BluetoothConstant.DEFAULT_PIN.length && !TextUtils.isEmpty(Bluetooth.getPairPassword())){
+                    try {
+                        BluetoothUtils.createBond(mTheDestDevice.getClass(), mTheDestDevice);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    if (mOnCreateBondResultListener != null) {
+                        mOnCreateBondResultListener.onCreateBonding();
+                    }
                 }else{
-                    Bluetooth.getBluetoothWrapper().setAutoPairAble(false);
+                    Bluetooth.setAutoPairAble(false);
                     if (mOnCreateBondResultListener != null) {
                         Bluetooth.createBond(mOnCreateBondResultListener);
                     }

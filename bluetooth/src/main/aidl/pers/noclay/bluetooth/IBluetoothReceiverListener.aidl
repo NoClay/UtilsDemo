@@ -6,6 +6,6 @@ package pers.noclay.bluetooth;
 interface IBluetoothReceiverListener {
     void onConnectStart();
     void onConnectSuccess();
-    void onConnectFailed();
+    void onConnectFailed(int errorCode);
     void onReceiveMessage(inout byte[] bytes);
 }

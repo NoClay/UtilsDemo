@@ -5,7 +5,6 @@ package pers.noclay.bluetooth;
 import pers.noclay.bluetooth.IBluetoothReceiverListener;
 interface IBluetoothConnection {
     void sendMessage(String message);
-    void sendFile(String path, int type);
     void connect(String bluetoothAddress);
     void registerListener(IBluetoothReceiverListener listener);
     void unregisterListener(IBluetoothReceiverListener listener);
