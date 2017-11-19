@@ -1,10 +1,8 @@
 package pers.noclay.util.adapter;
 
 import android.content.Context;
-import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -40,7 +38,7 @@ public class DemoListAdapter extends ArrayAdapter<Demo> {
         if (convertView == null){
             holder = new ViewHolder();
             view = LayoutInflater.from(context).inflate(resource, parent, false);
-            holder.textView = view.findViewById(R.id.text);
+            holder.textView = (TextView) view.findViewById(R.id.text);
             view.setTag(holder);
         }else{
             view = convertView;
