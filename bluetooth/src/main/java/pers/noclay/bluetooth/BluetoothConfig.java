@@ -17,11 +17,13 @@ public class BluetoothConfig {
     public long mDiscoverableTimeThreshold;
     public long mConnectTimeThreshold;
     public String mTargetAddress;
+    public Class<? extends BluetoothConnectionService> mConnectionServiceClass;
     public boolean mServerEnable = true;
 
     private BluetoothConfig(Context context, UUID UUID, boolean holdLongConnectAble,
                             boolean autoPairAble, String pairPassword, long discoverableTimeThreshold,
-                            String targetAddress, long connectTimeThreshold, boolean serverEnable) {
+                            String targetAddress, long connectTimeThreshold, boolean serverEnable,
+                            Class<? extends BluetoothConnectionService> connectionServiceClass) {
         mContext = context;
         mUUID = UUID;
         mHoldLongConnectAble = holdLongConnectAble;
@@ -31,7 +33,9 @@ public class BluetoothConfig {
         mTargetAddress = targetAddress;
         mConnectTimeThreshold = connectTimeThreshold;
         mServerEnable = serverEnable;
+        mConnectionServiceClass = connectionServiceClass;
     }
+
 
     public static final class Builder{
         private Context mContext;
@@ -43,6 +47,8 @@ public class BluetoothConfig {
         private String mTargetAddress;
         private long mConnectTime;
         private boolean mServerEnable = true;
+        private Class<? extends BluetoothConnectionService> mConnectionServiceClass;
+
 
         public Builder(Context context) {
             mContext = context;
@@ -98,9 +104,15 @@ public class BluetoothConfig {
             return this;
         }
 
+        public Builder setConnectionServiceClass(Class<? extends BluetoothConnectionService> connectionServiceClass) {
+            this.mConnectionServiceClass = connectionServiceClass;
+            return this;
+        }
+
         public BluetoothConfig build(){
             return new BluetoothConfig(mContext, mUUID, mHoldLongConnectAble,
-                    mAutoPairAble, mPairPassword, mDiscoverableTime, mTargetAddress, mConnectTime, mServerEnable);
+                    mAutoPairAble, mPairPassword, mDiscoverableTime, mTargetAddress,
+                    mConnectTime, mServerEnable, mConnectionServiceClass);
         }
 
     }

@@ -67,7 +67,7 @@ public class BluetoothConnectionService extends Service {
                                     && service.get().mConnectThread != null
                                     && service.get().mConnectThread.getBluetoothSocket() != null){
                                 if (!service.get().mConnectThread.getBluetoothSocket().isConnected()){
-                                    service.get().beginBroadcast(BluetoothConstant.METHOD_ON_CONNECT_FAILED, null, BluetoothConstant.ERROR_NOT_CONNECTED);
+                                    service.get().beginBroadcastWrapper(BluetoothConstant.METHOD_ON_CONNECT_FAILED, null, BluetoothConstant.ERROR_NOT_CONNECTED);
                                 }
                             }
                         }
@@ -75,19 +75,19 @@ public class BluetoothConnectionService extends Service {
                     service.get().mConnectThread = new ConnectThread(socket, mBluetoothHandler, msg.arg1);
                     service.get().mConnectThread.start();
                     service.get().mHasConnected = true;
-                    service.get().beginBroadcast(BluetoothConstant.METHOD_ON_CONNECT_SUCCESS, null, -1);
+                    service.get().beginBroadcastWrapper(BluetoothConstant.METHOD_ON_CONNECT_SUCCESS, null, -1);
                     break;
                 }
                 case MESSAGE_START_CONNECT: {
-                    service.get().beginBroadcast(BluetoothConstant.METHOD_ON_CONNECT_START, null, -1);
+                    service.get().beginBroadcastWrapper(BluetoothConstant.METHOD_ON_CONNECT_START, null, -1);
                     break;
                 }
                 case MESSAGE_CONNECT_FAILED: {
-                    service.get().beginBroadcast(BluetoothConstant.METHOD_ON_CONNECT_FAILED, null, -1);
+                    service.get().beginBroadcastWrapper(BluetoothConstant.METHOD_ON_CONNECT_FAILED, null, -1);
                     break;
                 }
                 case MESSAGE_READ_STRING: {
-                    service.get().beginBroadcast(BluetoothConstant.METHOD_ON_RECEIVE_MESSAGE, ((byte[]) msg.obj), -1);
+                    service.get().beginBroadcastWrapper(BluetoothConstant.METHOD_ON_RECEIVE_MESSAGE, ((byte[]) msg.obj), -1);
                     //针对收到的信息进行判定
                     break;
                 }
@@ -141,8 +141,13 @@ public class BluetoothConnectionService extends Service {
         return mBinder;
     }
 
-
-    public void beginBroadcast(int method, byte []bytes, int type) {
+    /**
+     * 内部方法，用于调用接口的方法。
+     * @param method
+     * @param bytes
+     * @param type
+     */
+    private void beginBroadcast(int method, byte []bytes, int type) {
         if (mListeners == null) {
             return;
         }
@@ -173,5 +178,15 @@ public class BluetoothConnectionService extends Service {
             }
         }
         mListeners.finishBroadcast();
+    }
+
+    /**
+     * 完成连接过程中的信息沟通
+     * @param method 方法参数，即调用该方法发送的信息是连接成功，连接失败还是其他
+     * @param bytes 如果是接收到消息，则为消息内容，否则为提示信息，可为null值
+     * @param type 连接失败的时候调用，type为连接失败的错误类型，暂时缺省为-1
+     */
+    protected void beginBroadcastWrapper(int method, byte []bytes, int type){
+        beginBroadcast(method, bytes, type);
     }
 }

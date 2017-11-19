@@ -104,7 +104,7 @@ public class Bluetooth {
     };
 
     private static void bindService(){
-        Intent intent = new Intent(sBluetoothWrapper.getApplicationContext(), BluetoothConnectionService.class);
+        Intent intent = new Intent(sBluetoothWrapper.getApplicationContext(), sBluetoothWrapper.getConnectionServiceClass());
         intent.putExtra(BluetoothConstant.VALUE_UUID, sBluetoothWrapper.getUUID().toString());
         intent.putExtra(BluetoothConstant.VALUE_HOLD_LONG_CONNECT, Bluetooth.isHoldLongConnectAble());
         intent.putExtra(BluetoothConstant.VALUE_SERVER_ENABLE, Bluetooth.isServerEnable());
@@ -175,9 +175,7 @@ public class Bluetooth {
             } else {
                 sBondedBTDevices.clear();
             }
-            for (BluetoothDevice blue : temp) {
-                sBondedBTDevices.add(blue);
-            }
+            sBondedBTDevices.addAll(temp);
             return sBondedBTDevices;
         }
     }

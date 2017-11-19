@@ -21,6 +21,8 @@ public class BluetoothWrapper {
     private String mTargetAddress;
     private long mConnectTimeThreshold;
     private boolean mServerEnable;
+    private Class<? extends BluetoothConnectionService> mConnectionServiceClass;
+
 
     static void config(BluetoothConfig config){
         if (instance == null){
@@ -43,6 +45,7 @@ public class BluetoothWrapper {
         this.mTargetAddress = config.mTargetAddress;
         this.mConnectTimeThreshold = config.mConnectTimeThreshold;
         this.mServerEnable = config.mServerEnable;
+        this.mConnectionServiceClass = config.mConnectionServiceClass;
     }
 
     public Activity getActivity(){
@@ -136,5 +139,10 @@ public class BluetoothWrapper {
 
     public void setServerEnable(boolean serverEnable) {
         mServerEnable = serverEnable;
+    }
+
+
+    public Class<? extends BluetoothConnectionService> getConnectionServiceClass() {
+        return mConnectionServiceClass;
     }
 }
