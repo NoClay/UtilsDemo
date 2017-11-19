@@ -147,7 +147,7 @@ public class BluetoothConnectionService extends Service {
      * @param bytes
      * @param type
      */
-    protected void beginBroadcast(int method, byte []bytes, int type) {
+    private void beginBroadcast(int method, byte []bytes, int type) {
         if (mListeners == null) {
             return;
         }
