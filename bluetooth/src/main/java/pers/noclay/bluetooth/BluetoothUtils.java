@@ -1,5 +1,6 @@
 package pers.noclay.bluetooth;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -54,6 +55,7 @@ public class BluetoothUtils {
      * @param permission
      * @return
      */
+    @SuppressLint("WrongConstant")
     public static boolean hasPermission(Activity activity, String permission){
         if (activity == null) {
             return false;

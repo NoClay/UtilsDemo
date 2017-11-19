@@ -1,7 +1,6 @@
 package pers.noclay.bluetooth;
 
 import android.app.Service;
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.os.Binder;
@@ -11,13 +10,11 @@ import android.os.Message;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
 import android.support.annotation.Nullable;
-import android.util.Log;
 
+import java.lang.ref.SoftReference;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static pers.noclay.bluetooth.BluetoothConstant.ARG_FROM_CLIENT;
 import static pers.noclay.bluetooth.BluetoothConstant.ARG_FROM_SERVER;
@@ -25,66 +22,79 @@ import static pers.noclay.bluetooth.BluetoothConstant.MESSAGE_CONNECT_FAILED;
 import static pers.noclay.bluetooth.BluetoothConstant.MESSAGE_CONNECT_SUCCESS;
 import static pers.noclay.bluetooth.BluetoothConstant.MESSAGE_READ_STRING;
 import static pers.noclay.bluetooth.BluetoothConstant.MESSAGE_START_CONNECT;
-import static pers.noclay.bluetooth.BluetoothConstant.MESSAGE_WAIT_CONNECT;
 
 /**
  * Created by i-gaolonghai on 2017/8/21.
  */
 
 public class BluetoothConnectionService extends Service {
-    private RemoteCallbackList<IBluetoothReceiverListener> mListeners = new RemoteCallbackList<>();
-    private ClientThread mClientThread;
-    private ServerThread mServerThread;
-    private ConnectThread mConnectThread;
-    private boolean mHoldLongConnectAble = false;
-    private boolean mHasConnected = false;
-    private Timer mTimer;
-    private UUID mUUID;
-    private Handler mHandler = new Handler() {
+    RemoteCallbackList<IBluetoothReceiverListener> mListeners = new RemoteCallbackList<>();
+    ClientThread mClientThread;
+    ServerThread mServerThread;
+    ConnectThread mConnectThread;
+    boolean mHoldLongConnectAble = false;
+    boolean mHasConnected = false;
+    Timer mTimer;
+    UUID mUUID;
+    private static class BluetoothHandler extends Handler{
+        SoftReference<? extends BluetoothConnectionService> service;
+        BluetoothHandler mBluetoothHandler;
+
+        public BluetoothHandler(BluetoothConnectionService service) {
+            if (service != null){
+                this.service = new SoftReference<BluetoothConnectionService>(service);
+                mBluetoothHandler = this;
+            }
+        }
+
         @Override
         public void handleMessage(Message msg) {
+            super.handleMessage(msg);
             switch (msg.what) {
                 case MESSAGE_CONNECT_SUCCESS: {
                     BluetoothSocket socket = null;
                     if (msg.arg1 == ARG_FROM_CLIENT) {
-                        socket = mClientThread.getBluetoothSocket();
+                        socket = service.get().mClientThread.getBluetoothSocket();
                     } else if (msg.arg1 == ARG_FROM_SERVER) {
-                        socket = mServerThread.getBluetoothSocket();
+                        socket = service.get().mServerThread.getBluetoothSocket();
                     }
-                    mTimer = new Timer();
-                    mTimer.schedule(new TimerTask() {
+                    service.get().mTimer = new Timer();
+                    service.get().mTimer.schedule(new TimerTask() {
                         @Override
                         public void run() {
-                            if (mHasConnected && mHoldLongConnectAble && mConnectThread != null && mConnectThread.getBluetoothSocket() != null){
-                                if (!mConnectThread.getBluetoothSocket().isConnected()){
-                                    beginBroadcast(BluetoothConstant.METHOD_ON_CONNECT_FAILED, null, BluetoothConstant.ERROR_NOT_CONNECTED);
+                            if (service.get().mHasConnected
+                                    && service.get().mHoldLongConnectAble
+                                    && service.get().mConnectThread != null
+                                    && service.get().mConnectThread.getBluetoothSocket() != null){
+                                if (!service.get().mConnectThread.getBluetoothSocket().isConnected()){
+                                    service.get().beginBroadcast(BluetoothConstant.METHOD_ON_CONNECT_FAILED, null, BluetoothConstant.ERROR_NOT_CONNECTED);
                                 }
                             }
                         }
                     }, 0, BluetoothConstant.DEFAULT_CONNECT_CHECK);
-                    mConnectThread = new ConnectThread(socket, mHandler, msg.arg1);
-                    mConnectThread.start();
-                    mHasConnected = true;
-                    beginBroadcast(BluetoothConstant.METHOD_ON_CONNECT_SUCCESS, null, -1);
+                    service.get().mConnectThread = new ConnectThread(socket, mBluetoothHandler, msg.arg1);
+                    service.get().mConnectThread.start();
+                    service.get().mHasConnected = true;
+                    service.get().beginBroadcast(BluetoothConstant.METHOD_ON_CONNECT_SUCCESS, null, -1);
                     break;
                 }
                 case MESSAGE_START_CONNECT: {
-                    beginBroadcast(BluetoothConstant.METHOD_ON_CONNECT_START, null, -1);
+                    service.get().beginBroadcast(BluetoothConstant.METHOD_ON_CONNECT_START, null, -1);
                     break;
                 }
                 case MESSAGE_CONNECT_FAILED: {
-                    beginBroadcast(BluetoothConstant.METHOD_ON_CONNECT_FAILED, null, -1);
+                    service.get().beginBroadcast(BluetoothConstant.METHOD_ON_CONNECT_FAILED, null, -1);
                     break;
                 }
                 case MESSAGE_READ_STRING: {
-                    beginBroadcast(BluetoothConstant.METHOD_ON_RECEIVE_MESSAGE, ((byte[]) msg.obj), -1);
+                    service.get().beginBroadcast(BluetoothConstant.METHOD_ON_RECEIVE_MESSAGE, ((byte[]) msg.obj), -1);
                     //针对收到的信息进行判定
                     break;
                 }
             }
-            super.handleMessage(msg);
         }
-    };
+    }
+    private BluetoothHandler mHandler = new BluetoothHandler(BluetoothConnectionService.this);
 
     private Binder mBinder = new IBluetoothConnection.Stub() {
         @Override
