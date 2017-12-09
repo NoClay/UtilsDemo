@@ -22,6 +22,7 @@
         <activity android:name=".activitys.DemoFoldLineView"/>
         <activity android:name=".activitys.WeChatActivity"
             android:theme="@style/AppTheme.NoActionBar"/>
+        <activity android:name=".activitys.HandlerActivity"/>
     </application>
 
 </manifest>

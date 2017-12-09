@@ -9,7 +9,7 @@ import java.lang.ref.WeakReference;
  * Created by NoClay on 2017/11/19.
  */
 
-public class BaseHandler<T extends BaseHandler.BaseHandlerCallBack> extends Handler{
+public class BaseHandler<T extends Handler.Callback> extends Handler{
     WeakReference<T> mWeakReference;
 
     public BaseHandler(T callBack) {
@@ -21,12 +21,8 @@ public class BaseHandler<T extends BaseHandler.BaseHandlerCallBack> extends Hand
         super.handleMessage(msg);
         T callBack = mWeakReference.get();
         if (callBack != null){
-            callBack.callBack(msg);
+            callBack.handleMessage(msg);
         }
-    }
-
-    public interface BaseHandlerCallBack {
-        public void callBack(Message msg);
     }
 
 

@@ -99,6 +99,7 @@ public class BluetoothConnectionService extends Service {
     private Binder mBinder = new IBluetoothConnection.Stub() {
         @Override
         public void connect(String bluetoothAddress) throws RemoteException{
+            mHandler.sendEmptyMessage(MESSAGE_START_CONNECT);
             mClientThread = new ClientThread(bluetoothAddress, mUUID, mHandler);
             mClientThread.start();
         }

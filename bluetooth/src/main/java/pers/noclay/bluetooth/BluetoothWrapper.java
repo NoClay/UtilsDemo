@@ -46,7 +46,7 @@ public class BluetoothWrapper {
         this.mConnectTimeThreshold = config.mConnectTimeThreshold;
         this.mServerEnable = config.mServerEnable;
 
-        if (config.mConnectionServiceClass == null){
+        if (config.mConnectionServiceClass != null){
             this.mConnectionServiceClass = config.mConnectionServiceClass;
         }else {
             this.mConnectionServiceClass = BluetoothConnectionService.class;
