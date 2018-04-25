@@ -40,12 +40,18 @@ public class Bluetooth {
     private static Timer sTimer;
     private static boolean sHasConnected = false;
     private static AtomicBoolean sIsSupportBluetooth;
-    private static final String TAG = "Bluetooth";
+    private static final String TAG = "BluetoothTest";
+
+    public static void setApplicationContext(Context applicationContext) {
+        if (sBluetoothWrapper != null) {
+            sBluetoothWrapper.setApplicationContext(applicationContext);
+        }
+    }
 
     private static IBinder.DeathRecipient sDeathRecipient = new IBinder.DeathRecipient() {
         @Override
         public void binderDied() {
-            if (sIBluetoothConnection != null){
+            if (sIBluetoothConnection != null) {
                 sIBluetoothConnection.asBinder().unlinkToDeath(sDeathRecipient, 0);
                 sIBluetoothConnection = null;
                 bindService();
@@ -58,7 +64,7 @@ public class Bluetooth {
         @Override
         public void onConnectStart() throws RemoteException {
             Log.d(TAG, "onConnectStart: 开始连接");
-            if (sOnConnectListener != null){
+            if (sOnConnectListener != null) {
                 sOnConnectListener.onConnectStart();
             }
             sTimer.schedule(new TimerTask() {
@@ -67,7 +73,7 @@ public class Bluetooth {
                     sBluetoothWrapper.getActivity().runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            if (!sHasConnected && sOnConnectListener != null){
+                            if (!sHasConnected && sOnConnectListener != null) {
                                 sOnConnectListener.onConnectFail(BluetoothConstant.ERROR_TIME_OUT);
                             }
                         }
@@ -79,7 +85,7 @@ public class Bluetooth {
         @Override
         public void onConnectSuccess() throws RemoteException {
             Log.d(TAG, "onConnectSuccess: 连接成功");
-            if (sOnConnectListener != null){
+            if (sOnConnectListener != null) {
                 sOnConnectListener.onConnectSuccess();
             }
             sHasConnected = true;
@@ -88,7 +94,7 @@ public class Bluetooth {
         @Override
         public void onConnectFailed(int errorCode) throws RemoteException {
             Log.d(TAG, "onConnectFailed: 连接失败");
-            if (sOnConnectListener != null){
+            if (sOnConnectListener != null) {
                 sOnConnectListener.onConnectFail(BluetoothConstant.ERROR_TIME_OUT);
             }
         }
@@ -96,14 +102,14 @@ public class Bluetooth {
         @Override
         public void onReceiveMessage(byte[] bytes) throws RemoteException {
             Log.d(TAG, "onReceiveMessage: 收到 = " + new String(bytes));
-            if (sOnConnectListener != null){
+            if (sOnConnectListener != null) {
                 sOnConnectListener.onReceiveMessage(bytes);
             }
         }
 
     };
 
-    private static void bindService(){
+    private static void bindService() {
         Intent intent = new Intent(sBluetoothWrapper.getApplicationContext(), sBluetoothWrapper.getConnectionServiceClass());
         intent.putExtra(BluetoothConstant.VALUE_UUID, sBluetoothWrapper.getUUID().toString());
         intent.putExtra(BluetoothConstant.VALUE_HOLD_LONG_CONNECT, Bluetooth.isHoldLongConnectAble());
@@ -132,6 +138,7 @@ public class Bluetooth {
 
     /**
      * BluetoothConfig，初始化蓝牙SDK
+     *
      * @param config
      */
     public static void initialize(BluetoothConfig config) {
@@ -142,16 +149,18 @@ public class Bluetooth {
             bindService();
             sHasConnected = false;
             //设置定时器
+            Log.d(TAG, "initialize: wrapper = " + sBluetoothWrapper);
             sTimer = new Timer(BluetoothConstant.getConnectName());
         }
     }
 
     /**
      * 外部调用，发送message给已连接设备
+     *
      * @param message
      */
     public static void sendMessage(String message) throws BluetoothException {
-        if (sHasConnected){
+        if (sHasConnected) {
             try {
                 sIBluetoothConnection.sendMessage(message);
             } catch (RemoteException e) {
@@ -163,6 +172,7 @@ public class Bluetooth {
 
     /**
      * 获取已经配对的设备
+     *
      * @return
      */
     public static List<BluetoothDevice> getBondedBTDevices() {
@@ -182,24 +192,24 @@ public class Bluetooth {
 
     public static void startConnect(ABSCreateBondStrategy createBondStrategy,
                                     OnCreateBondResultListener onCreateBondResultListener) {
-        if (isSupportedBluetooth()){
+        if (isSupportedBluetooth()) {
             openBluetooth();
             requestPermission();
             openBluetoothDiscoverable();
         }
-        if (!isBonded(getTargetAddress())){
+        if (!isBonded(getTargetAddress())) {
             //开始配对
-            if (createBondStrategy != null){
-                if (onCreateBondResultListener != null){
+            if (createBondStrategy != null) {
+                if (onCreateBondResultListener != null) {
                     createBondStrategy.setOnCreateBondResultListener(onCreateBondResultListener);
                 }
                 createBond(createBondStrategy);
-            }else{
+            } else {
                 createBond(onCreateBondResultListener);
             }
         }
         //开始配对
-        if (isBonded(getTargetAddress())){
+        if (isBonded(getTargetAddress())) {
             try {
                 sIBluetoothConnection.connect(getTargetAddress());
             } catch (RemoteException e) {
@@ -208,50 +218,50 @@ public class Bluetooth {
         }
     }
 
-    public static void startConnect(ABSCreateBondStrategy createBondStrategy){
+    public static void startConnect(ABSCreateBondStrategy createBondStrategy) {
         startConnect(createBondStrategy, null);
     }
 
     public static void startConnect(
-                                    OnCreateBondResultListener onCreateBondResultListener){
+            OnCreateBondResultListener onCreateBondResultListener) {
         startConnect(null, onCreateBondResultListener);
     }
 
-    public static void startConnect(){
+    public static void startConnect() {
         startConnect(null, null);
     }
 
-    public static void createBond(ABSCreateBondStrategy createBondStrategy){
-        if (isSupportedBluetooth()){
+    public static void createBond(ABSCreateBondStrategy createBondStrategy) {
+        if (isSupportedBluetooth()) {
             openBluetooth();
             requestPermission();
             openBluetoothDiscoverable();
         }
         sBluetoothWrapper.getReceiver().setCreateBondStrategy(createBondStrategy);
-        if (getTargetAddress() != null){
+        if (getTargetAddress() != null) {
             try {
                 Log.d(TAG, "createBond: target = " + getTargetAddress());
                 BluetoothUtils.createBond(getTargetDevice().getClass(), getTargetDevice());
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }else if (sOnCreateBondResultListener != null){
+        } else if (sOnCreateBondResultListener != null) {
             sOnCreateBondResultListener.onCreateBondFail(BluetoothConstant.ERROR_NO_SUCH_MAC_ADDRESS);
         }
     }
 
-    public static void createBond(OnCreateBondResultListener onCreateBondResultListener){
-        if (sCustomCreateBondStrategy == null){
-            if (sBluetoothWrapper.isAutoPairAble()){
+    public static void createBond(OnCreateBondResultListener onCreateBondResultListener) {
+        if (sCustomCreateBondStrategy == null) {
+            if (sBluetoothWrapper.isAutoPairAble()) {
                 //自动配对
                 createBond(new BluetoothAutoCreateBondStrategy(getTargetDevice(),
                         sBluetoothWrapper.getContext(),
                         sBluetoothWrapper.getReceiver(),
                         onCreateBondResultListener));
-            }else{
+            } else {
                 createBond(new BluetoothCreateBondStrategy(getTargetDevice(), onCreateBondResultListener));
             }
-        }else{
+        } else {
             sCustomCreateBondStrategy.setOnCreateBondResultListener(onCreateBondResultListener);
             createBond(sCustomCreateBondStrategy);
         }
@@ -260,14 +270,14 @@ public class Bluetooth {
     public static boolean isBonded(String address) {
         getBondedBTDevices();
         for (BluetoothDevice device : sBondedBTDevices) {
-            if (device.getAddress().equals(address)){
+            if (device.getAddress().equals(address)) {
                 return true;
             }
         }
         return false;
     }
 
-    public static boolean isSupportedBluetooth(){
+    public static boolean isSupportedBluetooth() {
         if (sBluetoothAdapter == null && sIsSupportBluetooth == null) {
             sBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         }
@@ -300,8 +310,11 @@ public class Bluetooth {
     }
 
     public static void onDestroy() {
+        if (!isSupportedBluetooth()){
+            return;
+        }
         unregisterBluetoothReceiver();
-        if (sIBluetoothConnection != null && sIBluetoothConnection.asBinder().isBinderAlive()){
+        if (sIBluetoothConnection != null && sIBluetoothConnection.asBinder().isBinderAlive()) {
             try {
                 sIBluetoothConnection.unregisterListener(sIBluetoothReceiverListener);
                 sBluetoothWrapper.getApplicationContext().unbindService(sServiceConnection);
@@ -317,6 +330,9 @@ public class Bluetooth {
     }
 
     public static void startSearch(OnFinishDiscoveryDevice onlineDevices) {
+        if (!isSupportedBluetooth()){
+            return;
+        }
         openBluetooth();
         requestPermission();
         openBluetoothDiscoverable();
@@ -326,7 +342,7 @@ public class Bluetooth {
         if (sBluetoothAdapter.isDiscovering()) {
             return;
         }
-        if (onlineDevices != null){
+        if (onlineDevices != null) {
             sBluetoothWrapper.getReceiver().setOnFinishDiscoveryDevice(onlineDevices);
         }
         sBluetoothAdapter.startDiscovery();
@@ -334,6 +350,9 @@ public class Bluetooth {
 
 
     public static void openBluetooth() {
+        if (!isSupportedBluetooth()){
+            return;
+        }
         if (isSupportedBluetooth() && !isBluetoothEnable()) {
             Context context = sBluetoothWrapper.getContext();
             Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -382,7 +401,6 @@ public class Bluetooth {
     }
 
 
-
     private static void registerBluetoothReceiver() {
         BluetoothReceiver receiver = sBluetoothWrapper.getReceiver();
         Context context = sBluetoothWrapper.getApplicationContext();
@@ -415,7 +433,7 @@ public class Bluetooth {
                     sBluetoothWrapper.getActivity().runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            if (sPrepareBluetoothListener != null){
+                            if (sPrepareBluetoothListener != null) {
                                 closeBluetoothDiscoverable();
                                 sPrepareBluetoothListener.onCloseBluetoothDiscoverable();
                             }
@@ -459,8 +477,8 @@ public class Bluetooth {
         sOnConnectListener = onConnectListener;
     }
 
-    public static BluetoothDevice getTargetDevice(){
-        if (isSupportedBluetooth() && getTargetAddress() != null){
+    public static BluetoothDevice getTargetDevice() {
+        if (isSupportedBluetooth() && getTargetAddress() != null) {
             return sBluetoothAdapter.getRemoteDevice(getTargetAddress());
         }
         return null;
@@ -512,17 +530,18 @@ public class Bluetooth {
     public static void setBluetoothWrapper(BluetoothWrapper wrapper) {
         sBluetoothWrapper = wrapper;
     }
-    public static UUID getUUID(){
-        if (isSupportedBluetooth()){
+
+    public static UUID getUUID() {
+        if (isSupportedBluetooth()) {
             return sBluetoothWrapper.getUUID();
         }
         return null;
     }
 
-    public static void setTargetAddress(String targetAddress){
+    public static void setTargetAddress(String targetAddress) {
         if (isSupportedBluetooth()) {
             String temp = BluetoothUtils.getMacAddress(targetAddress);
-            if (temp != null){
+            if (temp != null) {
                 sBluetoothWrapper.setTargetAddress(BluetoothUtils.getMacAddress(targetAddress));
             }
         }
@@ -543,18 +562,18 @@ public class Bluetooth {
     }
 
     public static void setCustomCreateBondStrategy(ABSCreateBondStrategy customCreateBondStrategy) {
-        if (isSupportedBluetooth()){
+        if (isSupportedBluetooth()) {
             sCustomCreateBondStrategy = customCreateBondStrategy;
-            if (sBluetoothWrapper != null){
+            if (sBluetoothWrapper != null) {
                 sBluetoothWrapper.getReceiver().setCreateBondStrategy(sCustomCreateBondStrategy);
             }
         }
     }
 
     public static void setOnCreateBondResultListener(OnCreateBondResultListener onCreateBondResultListener) {
-        if (isSupportedBluetooth()){
+        if (isSupportedBluetooth()) {
             sOnCreateBondResultListener = onCreateBondResultListener;
-            if (sBluetoothWrapper != null){
+            if (sBluetoothWrapper != null) {
                 sBluetoothWrapper.getReceiver()
                         .getCreateBondStrategy()
                         .setOnCreateBondResultListener(onCreateBondResultListener);
@@ -563,37 +582,36 @@ public class Bluetooth {
     }
 
 
-
     public static long getDiscoverableTimeThreshold() {
-        if (sBluetoothWrapper != null){
+        if (sBluetoothWrapper != null) {
             return sBluetoothWrapper.getDiscoverableTimeThreshold();
         }
         return -1;
     }
 
     public static Context getApplicationContext() {
-        if (sBluetoothWrapper != null){
+        if (sBluetoothWrapper != null) {
             return sBluetoothWrapper.getApplicationContext();
         }
         return null;
     }
 
     public static boolean isHoldLongConnectAble() {
-        if (sBluetoothWrapper != null){
+        if (sBluetoothWrapper != null) {
             return sBluetoothWrapper.isHoldLongConnectAble();
         }
         return false;
     }
 
     public static boolean isAutoPairAble() {
-        if (sBluetoothWrapper != null){
+        if (sBluetoothWrapper != null) {
             return sBluetoothWrapper.isAutoPairAble();
         }
         return false;
     }
 
     public static String getPairPassword() {
-        if (sBluetoothWrapper != null){
+        if (sBluetoothWrapper != null) {
             return sBluetoothWrapper.getPairPassword();
         }
         return null;
@@ -601,33 +619,33 @@ public class Bluetooth {
 
 
     public static void setAutoPairAble(boolean autoPairAble) {
-        if (sBluetoothWrapper != null){
+        if (sBluetoothWrapper != null) {
             sBluetoothWrapper.setAutoPairAble(autoPairAble);
         }
     }
 
     public static void setContext(Context context) {
-        if (sBluetoothWrapper != null){
+        if (sBluetoothWrapper != null) {
             sBluetoothWrapper.setContext(context);
         }
     }
 
 
     public static void setPairPassword(String pairPassword) {
-        if (sBluetoothWrapper != null){
+        if (sBluetoothWrapper != null) {
             sBluetoothWrapper.setPairPassword(pairPassword);
         }
     }
 
     public static long getConnectTimeThreshold() {
-        if (sBluetoothWrapper != null){
+        if (sBluetoothWrapper != null) {
             return sBluetoothWrapper.getConnectTimeThreshold();
         }
         return -1;
     }
 
     public static void setConnectTimeThreshold(long connectTimeThreshold) {
-        if (sBluetoothWrapper != null){
+        if (sBluetoothWrapper != null) {
             sBluetoothWrapper.setConnectTimeThreshold(connectTimeThreshold);
         }
     }
@@ -642,8 +660,8 @@ public class Bluetooth {
         return sBluetoothAdapter;
     }
 
-    public static boolean isServerEnable(){
-        if (sBluetoothWrapper != null){
+    public static boolean isServerEnable() {
+        if (sBluetoothWrapper != null) {
             return sBluetoothWrapper.isServerEnable();
         }
         return false;

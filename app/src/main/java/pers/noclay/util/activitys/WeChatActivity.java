@@ -76,6 +76,7 @@ public class WeChatActivity extends AppCompatActivity implements View.OnClickLis
         Bluetooth.initialize(config);
         Bluetooth.setPrepareBluetoothListener(this);
         Bluetooth.setOnConnectListener(this);
+        Bluetooth.setApplicationContext(this.getApplicationContext());
     }
 
     private void initView() {
