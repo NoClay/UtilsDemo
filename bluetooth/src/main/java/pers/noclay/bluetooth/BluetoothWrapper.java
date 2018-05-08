@@ -22,7 +22,12 @@ public class BluetoothWrapper {
     private long mConnectTimeThreshold;
     private boolean mServerEnable;
     private Class<? extends BluetoothConnectionService> mConnectionServiceClass;
+    private Context mApplicationContext;
 
+
+    public void setApplicationContext(Context mApplicationContext) {
+        this.mApplicationContext = mApplicationContext;
+    }
 
     static void config(BluetoothConfig config){
         if (instance == null){
@@ -31,6 +36,7 @@ public class BluetoothWrapper {
                     instance = new BluetoothWrapper(config);
                 }
             }
+
         }
     }
 
@@ -51,6 +57,99 @@ public class BluetoothWrapper {
         }else {
             this.mConnectionServiceClass = BluetoothConnectionService.class;
         }
+    }
+
+
+    public static void setInstance(BluetoothWrapper instance) {
+        BluetoothWrapper.instance = instance;
+    }
+
+    public Context getmContext() {
+        return mContext;
+    }
+
+    public void setmContext(Context mContext) {
+        this.mContext = mContext;
+    }
+
+    public UUID getmUUID() {
+        return mUUID;
+    }
+
+    public void setmUUID(UUID mUUID) {
+        this.mUUID = mUUID;
+    }
+
+    public boolean ismHoldLongConnectAble() {
+        return mHoldLongConnectAble;
+    }
+
+    public void setmHoldLongConnectAble(boolean mHoldLongConnectAble) {
+        this.mHoldLongConnectAble = mHoldLongConnectAble;
+    }
+
+    public boolean ismAutoPairAble() {
+        return mAutoPairAble;
+    }
+
+    public void setmAutoPairAble(boolean mAutoPairAble) {
+        this.mAutoPairAble = mAutoPairAble;
+    }
+
+    public String getmPairPassword() {
+        return mPairPassword;
+    }
+
+    public void setmPairPassword(String mPairPassword) {
+        this.mPairPassword = mPairPassword;
+    }
+
+    public BluetoothReceiver getmReceiver() {
+        return mReceiver;
+    }
+
+    public void setmReceiver(BluetoothReceiver mReceiver) {
+        this.mReceiver = mReceiver;
+    }
+
+    public long getmDiscoverableTimeThreshold() {
+        return mDiscoverableTimeThreshold;
+    }
+
+    public void setmDiscoverableTimeThreshold(long mDiscoverableTimeThreshold) {
+        this.mDiscoverableTimeThreshold = mDiscoverableTimeThreshold;
+    }
+
+    public String getmTargetAddress() {
+        return mTargetAddress;
+    }
+
+    public void setmTargetAddress(String mTargetAddress) {
+        this.mTargetAddress = mTargetAddress;
+    }
+
+    public long getmConnectTimeThreshold() {
+        return mConnectTimeThreshold;
+    }
+
+    public void setmConnectTimeThreshold(long mConnectTimeThreshold) {
+        this.mConnectTimeThreshold = mConnectTimeThreshold;
+    }
+
+    public boolean ismServerEnable() {
+        return mServerEnable;
+    }
+
+    public void setmServerEnable(boolean mServerEnable) {
+        this.mServerEnable = mServerEnable;
+    }
+
+    public Class<? extends BluetoothConnectionService> getmConnectionServiceClass() {
+        return mConnectionServiceClass;
+    }
+
+    public void setmConnectionServiceClass(Class<? extends BluetoothConnectionService> mConnectionServiceClass) {
+        this.mConnectionServiceClass = mConnectionServiceClass;
     }
 
     public Activity getActivity(){
