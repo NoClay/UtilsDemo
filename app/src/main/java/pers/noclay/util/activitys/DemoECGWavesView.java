@@ -1,17 +1,21 @@
 package pers.noclay.util.activitys;
 
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
+import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 
 import java.util.Random;
+
 import pers.noclay.ecgwaveview.ECGWaveView;
 import pers.noclay.util.R;
 
 
 public class DemoECGWavesView extends AppCompatActivity implements View.OnClickListener{
     ECGWaveView wavesView;
-
+    private static final String TAG = "DemoECGWavesView";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -20,6 +24,23 @@ public class DemoECGWavesView extends AppCompatActivity implements View.OnClickL
         setupData();
     }
 
+
+    Handler mHandler = new Handler(){
+        int start = 0;
+        int receive = 0;
+        @Override
+        public boolean sendMessageAtTime(Message msg, long uptimeMillis) {
+            Log.d(TAG, "sendMessageAtTime: start = " + start ++);
+            return super.sendMessageAtTime(msg, uptimeMillis);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            Log.d(TAG, "handleMessage: receive = " + receive ++);
+            int i = 0;
+            super.handleMessage(msg);
+        }
+    };
     private void setupData() {
         final Random random = new Random();
         new Thread(new Runnable() {
@@ -69,11 +90,11 @@ public class DemoECGWavesView extends AppCompatActivity implements View.OnClickL
     public void onClick(View view) {
         switch (view.getId()){
             case R.id.startBt:{
-                wavesView.startRefresh();
+//                wavesView.startRefresh();
                 break;
             }
             case R.id.stopBt:{
-                wavesView.stopRefresh();
+//                wavesView.stopRefresh();
                 break;
             }
         }

@@ -40,7 +40,7 @@ public class Bluetooth {
     private static Timer sTimer;
     private static boolean sHasConnected = false;
     private static AtomicBoolean sIsSupportBluetooth;
-    private static final String TAG = "Bluetooth";
+    private static final String TAG = "Bluetooth Logger";
 
     private static IBinder.DeathRecipient sDeathRecipient = new IBinder.DeathRecipient() {
         @Override

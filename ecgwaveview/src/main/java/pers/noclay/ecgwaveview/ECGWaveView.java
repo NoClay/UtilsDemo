@@ -5,26 +5,27 @@ import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.os.Handler;
-import android.os.Message;
+import android.graphics.drawable.BitmapDrawable;
 import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.View;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
-import java.util.TimerTask;
-
 
 /**
- * Created by 82661 on 2016/10/29.
+ * Created by NoClay on 2018/5/8.
  */
 
-public class ECGWaveView extends View {
+public class ECGWaveView extends SurfaceView implements SurfaceHolder.Callback, Runnable {
+    private SurfaceHolder mHolder;
+    private Canvas mCanvas;//绘图的画布
+    private boolean mIsDrawing;//控制绘画线程的标志位
 
-    private static final String TAG = "HeartWavesView";
+    private static final String TAG = "HeartWavesViewV2";
     private int mTableLineColor = Color.RED;
     private int mWavesLineColor = Color.BLACK;
     private int mXYTextColor = Color.BLACK;
@@ -67,88 +68,22 @@ public class ECGWaveView extends View {
     private float minData;
     private float dataXOffset;
     private Timer mTimer;
+    //定义接口
+    public int TIME_IN_FRAME = 30;
     private Object lock = new Object();
     OnDataChangedListener onDataChangedListener = null;
+
     public static final int MSG_UPDATE = 0;
 
-    //定义接口
     public interface OnDataChangedListener {
+
         void onMaxDataChanged(float max);
+
         void onAverageDataChanged(float average);
+
         void onMinDataChanged(float min);
-    }
 
-    private void initTimer() {
-        if (mTimer == null){
-            mTimer = new Timer();
-        }
-        mTimer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                mHandler.sendEmptyMessage(MSG_UPDATE);
-            }
-        }, 0, 1000 / refreshHz);
-    }
 
-    Handler mHandler = new Handler(){
-        @Override
-        public void handleMessage(Message msg) {
-            super.handleMessage(msg);
-            switch (msg.what){
-                case MSG_UPDATE:{
-                    invalidate();
-                    break;
-                }
-            }
-        }
-    };
-
-    /**
-     * 在代码中动态生成的时候用
-     *
-     * @param context
-     */
-    public ECGWaveView(Context context) {
-        this(context, null);
-    }
-
-    /**
-     * 在布局中使用了自定义属性的时候使用
-     *
-     * @param context
-     * @param attrs
-     */
-    public ECGWaveView(Context context, AttributeSet attrs) {
-        this(context, attrs, 0);
-    }
-
-    private void resolveAttrs(AttributeSet attrs) {
-        TypedArray typeArray = context.obtainStyledAttributes(attrs, R.styleable.ECGWaveView);
-        mTableLineColor = typeArray.getColor(R.styleable.ECGWaveView_tableLineColor, Color.RED);
-        mXYTextColor = typeArray.getColor(R.styleable.ECGWaveView_xyTextColor, Color.BLACK);
-        mWavesLineColor = typeArray.getColor(R.styleable.ECGWaveView_wavesLineColor, Color.BLACK);
-        mXYTextSize = typeArray.getInteger(R.styleable.ECGWaveView_xyTextSize, 20);
-        minY = typeArray.getInteger(R.styleable.ECGWaveView_minY, 0);
-        maxY = typeArray.getInteger(R.styleable.ECGWaveView_maxY, 4100);
-        refreshHz = typeArray.getInteger(R.styleable.ECGWaveView_refreshHZ, 20);
-        dataHz = typeArray.getInteger(R.styleable.ECGWaveView_dataHZ, 333);
-        xGridNum = typeArray.getInteger(R.styleable.ECGWaveView_xGridNum, 25);
-        mTimeCount = typeArray.getFloat(R.styleable.ECGWaveView_mTimeCount, 2f);
-        typeArray.recycle();
-    }
-
-    /**
-     * 在使用了自定义style集的时候使用
-     *
-     * @param context
-     * @param attrs
-     * @param defStyleAttr
-     */
-    public ECGWaveView(Context context, AttributeSet attrs, int defStyleAttr) {
-        super(context, attrs, defStyleAttr);
-        this.context = context;
-        resolveAttrs(attrs);
-        initView();
     }
 
 
@@ -171,19 +106,6 @@ public class ECGWaveView extends View {
         paintXYText.setColor(mXYTextColor);
         paintXYText.setTextSize(mXYTextSize);
         isFirstDrawBackground = true;
-    }
-
-    @Override
-    protected void onDraw(Canvas canvas) {
-        super.onDraw(canvas);
-        if (isFirstDrawBackground){
-            measureGrid();
-        }
-        Log.d(TAG, "onDraw: draw waves size = " + pointCache.size());
-        drawBackground(canvas);
-        synchronized (lock){
-            drawWaves(canvas);
-        }
     }
 
     private void measureGrid() {
@@ -209,10 +131,14 @@ public class ECGWaveView extends View {
     private void drawWaves(Canvas canvas) {
         PointXY start;
         PointXY end;
-        for (int i = 0; i < pointCache.size() - 2; i++) {
-            start = pointCache.get(i);
-            end = pointCache.get(i + 1);
-            canvas.drawLine(start.x, start.y, end.x, end.y, paintWavesLine);
+        synchronized (lock) {
+            for (int i = 0; i < pointCache.size() - 2; i++) {
+                start = pointCache.get(i);
+                end = pointCache.get(i + 1);
+                if (start != null && end != null) {
+                    canvas.drawLine(start.x, start.y, end.x, end.y, paintWavesLine);
+                }
+            }
         }
     }
 
@@ -264,6 +190,7 @@ public class ECGWaveView extends View {
 //                topPadding / 2, paintTitle);
     }
 
+
     public void drawNextPoint(float y) {
         y = y > maxY ? maxY : y;
         y = y < minY ? minY : y;
@@ -274,10 +201,10 @@ public class ECGWaveView extends View {
                 point.x = leftPadding;
                 point.y = ((yStartNum - y) / grid_num * gridWidth + topPadding);
                 pointCache.add(point);
-            }else{
+            } else {
                 updateData(y);
                 //获取数据的平均值和最大值
-                synchronized (lock){
+                synchronized (lock) {
                     PointXY nowPoint = new PointXY();
                     int index = pointCache.size();
                     if (index == dataThreshold - 1) {
@@ -298,6 +225,26 @@ public class ECGWaveView extends View {
         }
     }
 
+    private void resolveAttrs(AttributeSet attrs) {
+        if (attrs == null) {
+            return;
+        }
+        TypedArray typeArray = context.obtainStyledAttributes(attrs, R.styleable.ECGWaveView);
+        mTableLineColor = typeArray.getColor(R.styleable.ECGWaveView_tableLineColor, Color.RED);
+        mXYTextColor = typeArray.getColor(R.styleable.ECGWaveView_xyTextColor, Color.BLACK);
+        mWavesLineColor = typeArray.getColor(R.styleable.ECGWaveView_wavesLineColor, Color.BLACK);
+        mXYTextSize = typeArray.getInteger(R.styleable.ECGWaveView_xyTextSize, 20);
+        minY = typeArray.getInteger(R.styleable.ECGWaveView_minY, 0);
+        maxY = typeArray.getInteger(R.styleable.ECGWaveView_maxY, 4100);
+        refreshHz = typeArray.getInteger(R.styleable.ECGWaveView_refreshHZ, 20);
+        TIME_IN_FRAME = 1000 / refreshHz;
+        dataHz = typeArray.getInteger(R.styleable.ECGWaveView_dataHZ, 333);
+        xGridNum = typeArray.getInteger(R.styleable.ECGWaveView_xGridNum, 25);
+        mTimeCount = typeArray.getFloat(R.styleable.ECGWaveView_mTimeCount, 2f);
+        typeArray.recycle();
+    }
+
+
     private void updateData(float y) {
         if (y > maxData) {
             maxData = y;
@@ -305,19 +252,109 @@ public class ECGWaveView extends View {
                 this.onDataChangedListener.onMaxDataChanged(maxData);
             }
         }
-        if (y < minData){
+        if (y < minData) {
             minData = y;
-            if (this.onDataChangedListener != null){
+            if (this.onDataChangedListener != null) {
                 this.onDataChangedListener.onMinDataChanged(minData);
             }
         }
         averageData = (pointCache.size() * averageData + y) / (pointCache.size() + 1);
     }
 
-
     private static class PointXY {
         float y;
         float x;
+
+    }
+
+    public ECGWaveView(Context context) {
+        this(context, null, 0);
+    }
+
+    public ECGWaveView(Context context, AttributeSet attrs) {
+        this(context, attrs, 0);
+    }
+
+    public ECGWaveView(Context context, AttributeSet attrs, int defStyleAttr) {
+        super(context, attrs, defStyleAttr);
+        this.context = context;
+        resolveAttrs(attrs);
+        initView();
+        initHolder();
+    }
+
+    private void initHolder() {
+        mHolder = getHolder();//获取SurfaceHolder对象
+        mHolder.addCallback(this);//注册SurfaceHolder的回调方法
+        setFocusable(true);
+        setFocusableInTouchMode(true);
+        this.setKeepScreenOn(true);
+    }
+
+    @Override
+    public void surfaceCreated(SurfaceHolder holder) {
+        mIsDrawing = true;
+        new Thread(this).start();
+    }
+
+    @Override
+    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+
+    }
+
+    @Override
+    public void surfaceDestroyed(SurfaceHolder holder) {
+        synchronized (this) {
+            mIsDrawing = false;
+        }
+    }
+
+    @Override
+    public void run() {
+        while (mIsDrawing) {
+            synchronized (this){
+                /**取得更新之前的时间**/
+                long startTime = System.currentTimeMillis();
+                if (isFirstDrawBackground) {
+                    measureGrid();
+                }
+                /**在这里加上线程安全锁**/
+                synchronized (mHolder) {
+                    mCanvas = mHolder.lockCanvas();
+                    /**拿到当前画布 然后锁定**/
+                    draw(mCanvas);
+                    /**绘制结束后解锁显示在屏幕上**/
+                    mHolder.unlockCanvasAndPost(mCanvas);
+                }
+                /**取得更新结束的时间**/
+                long endTime = System.currentTimeMillis();
+                /**计算出一次更新的毫秒数**/
+                int diffTime = (int) (endTime - startTime);
+                /**确保每次更新时间为30帧**/
+                while (diffTime <= TIME_IN_FRAME) {
+                    diffTime = (int) (System.currentTimeMillis() - startTime);
+                    /**线程等待**/
+                    Thread.yield();
+                }
+            }
+
+        }
+
+    }
+
+    @Override
+    public void draw(Canvas canvas) {
+        if (canvas == null) {
+            return;
+        }
+        super.draw(canvas);
+        if (getBackground() == null) {
+            canvas.drawColor(Color.WHITE);
+        } else {
+            canvas.drawBitmap(((BitmapDrawable) getBackground()).getBitmap(), 0, 0, new Paint());
+        }
+        drawBackground(canvas);
+        drawWaves(canvas);
     }
 
 
@@ -407,23 +444,12 @@ public class ECGWaveView extends View {
     }
 
     public int getRefreshHz() {
-        return refreshHz;
+        return 1000 / refreshHz;
     }
 
     public void setRefreshHz(int refreshHz) {
         this.refreshHz = refreshHz;
+        this.TIME_IN_FRAME = 1000 / refreshHz;
         initView();
     }
-
-    public void startRefresh(){
-        initTimer();
-    }
-
-    public void stopRefresh(){
-        if (mTimer != null){
-            mTimer.cancel();
-            mTimer = null;
-        }
-    }
-
 }

@@ -17,4 +17,5 @@
         <attr name="xGridNum" format="integer"/>
         <attr name="mTimeCount"  format="float"/>
     </declare-styleable>
+
 </resources>
