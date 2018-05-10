@@ -29,7 +29,7 @@ public class SystemUtils {
         if (activity == null) {
             return;
         }
-        int check = 0;
+        int check = PackageManager.PERMISSION_DENIED;
         if (Build.VERSION.SDK_INT >= M) {
             check = activity.checkSelfPermission(permission);
         } else {

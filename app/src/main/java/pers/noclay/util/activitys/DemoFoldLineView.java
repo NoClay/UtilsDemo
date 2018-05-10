@@ -32,6 +32,8 @@ public class DemoFoldLineView extends AppCompatActivity implements FoldLineView.
         mFoldLineView.setAdapter(mAdapter);
         mFoldLineView.setOnScrollChartListener(this);
         mFoldLineView.startDrawing();
+        mFoldLineView.setYStart(0);
+        mFoldLineView.setYEnd(600);
     }
 
     private void setupColor() {
@@ -52,9 +54,9 @@ public class DemoFoldLineView extends AppCompatActivity implements FoldLineView.
         Random random = new Random();
         for (int i = 0; i < 100; i++) {
             MeasureFoldLine m = new MeasureFoldLine(
-                    (float)(random.nextInt(600) - 300),
-                    (float)(random.nextInt(600) - 300),
-                    (float)(random.nextInt(600) - 300),
+                    (float)(random.nextInt(600)),
+                    (float)(random.nextInt(600)),
+                    (float)(random.nextInt(600)),
                     i +"");
             data.add(m);
         }

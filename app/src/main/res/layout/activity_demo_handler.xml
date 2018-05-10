@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:id="@+id/layer"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -9,4 +11,27 @@
         android:layout_width="match_parent"
         android:layout_height="50dp"/>
 
-</android.support.constraint.ConstraintLayout>
+
+    <Button
+        android:text="share"
+        android:id="@+id/share"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <Button
+        android:text="share To Wechat"
+        android:id="@+id/shareToWeChat"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <Button
+        android:text="share To QQ"
+        android:id="@+id/shareToQQ"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <ImageView
+        android:id="@+id/test"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+</LinearLayout>
